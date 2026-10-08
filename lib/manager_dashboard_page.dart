@@ -4,6 +4,7 @@ import 'api_service.dart';
 import 'manager_order_page.dart';
 import 'manager_product_page.dart';
 import 'accounting_dashboard_page.dart';
+import 'login_page.dart';
 import 'sapaan_random.dart';
 
 class ManagerDashboardPage extends StatefulWidget {
@@ -243,46 +244,58 @@ class _ManagerDashboardPageState
   // BUILD
   // ============================================================
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Manager Dashboard',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Manager Dashboard'),
+      actions: [
+        // LOGOUT
+        IconButton(
+          tooltip: 'Logout',
+          icon: const Icon(Icons.logout),
+          onPressed: () async {
+            await ApiService.logout();
+
+            if (!mounted) return;
+
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const LoginPage(),
+              ),
+              (route) => false,
+            );
+          },
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _isLoading ||
-                    _isRefreshing
-                ? null
-                : () {
-                    _loadDashboard(
-                      refresh: true,
-                    );
-                  },
-            icon: _isRefreshing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child:
-                        CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Icon(
-                    Icons.refresh_rounded,
+
+        // REFRESH
+        IconButton(
+          tooltip: 'Refresh',
+          onPressed: _isLoading || _isRefreshing
+              ? null
+              : () {
+                  _loadDashboard(refresh: true);
+                },
+          icon: _isRefreshing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
                   ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: _buildBody(),
-    );
-  }
+                )
+              : const Icon(
+                  Icons.refresh_rounded,
+                ),
+        ),
+
+        const SizedBox(width: 8),
+      ],
+    ),
+    body: _buildBody(),
+  );
+}
 
   Widget _buildBody() {
     if (_isLoading) {
@@ -1102,5 +1115,4 @@ class _ManagerDashboardPageState
     );
   }
 
-  
 }

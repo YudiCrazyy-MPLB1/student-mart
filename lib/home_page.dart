@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    custgreetings = SapaanRandom.generate();
+    custgreetings = SapaanCustRandom.generate();
 
     cartController.addListener(_cartUpdated);
     searchController.addListener(_searchUpdated);
