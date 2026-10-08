@@ -7,7 +7,7 @@ import 'product_detail_page.dart';
 import 'order_page.dart';
 import 'api_service.dart';
 import 'login_page.dart';
-import 'Sapaan_random.dart';
+import 'sapaan_random.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
-  late final String _GreetingMessage;
+  late final String custgreetings;
   // =====================================================
   // KATEGORI
   // =====================================================
@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    _GreetingMessage = SapaanCustRandom.generate();
+    custgreetings = SapaanRandom.generate();
 
     cartController.addListener(_cartUpdated);
     searchController.addListener(_searchUpdated);
@@ -725,7 +725,7 @@ class _HomePageState extends State<HomePage> {
               CrossAxisAlignment.start,
           children: [
             Text(
-              _GreetingMessage,
+              custgreetings,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
