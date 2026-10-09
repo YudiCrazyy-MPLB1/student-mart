@@ -640,20 +640,6 @@ const SizedBox(height: 8),
               ),
               child: Column(
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: isLoading ? null : _backToLogin,
-                      icon: const Icon(
-                        Icons.arrow_back_rounded,
-                        size: 19,
-                      ),
-                      label: const Text('Kembali ke Login'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: brandGreen,
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 16),
                   _registerForm(compact: true),
                   const SizedBox(height: 20),
