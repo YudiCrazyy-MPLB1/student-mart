@@ -29,3 +29,17 @@ class SapaanCustRandom {
     return custgreetings[random.nextInt(custgreetings.length)];
   }
 }
+
+class PasswordHintRandomAwoawkaoakw{
+  static final List<String> custgreetings = [
+    'StudentmartJago',
+    'Passwordexample123',
+    'HelloWorld',
+    'heyantekantekasing',
+  ];
+
+  static String generate() {
+    final random = Random();
+    return custgreetings[random.nextInt(custgreetings.length)];
+  }
+}
