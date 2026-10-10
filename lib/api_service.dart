@@ -12,7 +12,7 @@ import 'package:image_picker/image_picker.dart';
 class ApiService {
   static const flutterSecureStorage = FlutterSecureStorage();
   static const String baseUrl =
-      'http://127.0.0.1:8000/api';
+      'https://studentmart-smk4jember.my.id/api';
 
   static const Duration requestTimeout =
       Duration(seconds: 15);
