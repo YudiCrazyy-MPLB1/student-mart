@@ -31,4 +31,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: build/web/
-          server-dir: htdocs/ # Folder tujuan di hosting Anda
+          server-dir: studentmart-smk4jember.my.id/htdocs/ # Folder tujuan di hosting Anda
