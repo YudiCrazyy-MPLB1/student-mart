@@ -25,7 +25,7 @@ jobs:
         run: flutter build web --release
 
       - name: Sync files to InfinityFree via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
