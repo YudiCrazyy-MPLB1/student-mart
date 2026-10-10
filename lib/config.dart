@@ -1,3 +1,3 @@
 class Config {
-  static const String baseUrl = 'https://api.studentmart-smkn4.com/api';
+  static const String baseUrl = 'https://studentmart.wuaze.com/api';
 }
