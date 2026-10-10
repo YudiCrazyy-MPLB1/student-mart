@@ -191,26 +191,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
           ],
         ),
-
-        const SizedBox(height: 12),
-              // --- PENANDA TEST FTP DEPLOY ---
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'TEST DEPLOY FTP: v1.0.1 (BERHASIL)',
-                    style: TextStyle(
-                      color: Colors.deepOrange,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
       ],
     );
   }
@@ -504,6 +484,37 @@ class _LoginPageState extends State<LoginPage> {
                 autofillHints: const [AutofillHints.password],
                 onSubmitted: _login,
               ),
+              const Center(
+                child: Text(
+                  'STUDENT MART • BELANJA JADI PRAKTIS',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF9AA69F),
+                    fontSize: 9,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // --- PINDAHKAN KESINI (DI LUAR LOGO) ---
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'TEST DEPLOY FTP: v1.0.1 (BERHASIL)',
+                    style: TextStyle(
+                      color: Colors.deepOrange,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 28),
 
               SizedBox(
