@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'home_page.dart';
 import 'login_page.dart';
+import 'manager_dashboard_page.dart';
 
 class AuthCheckPage extends StatefulWidget {
   const AuthCheckPage({super.key});
@@ -48,7 +49,7 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
 
       if (!mounted) return;
 
-      _openHome();
+      _routeUser();
     } on TimeoutException {
       debugPrint('AUTH CHECK: timeout');
 
@@ -78,14 +79,24 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
     );
   }
 
-  void _openHome() {
+  void _routeUser() {
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const HomePage(),
-      ),
-    );
+    // Cek role dari ApiService
+    if (ApiService.userRole == 'manager') {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          // Ganti dengan halaman dashboard manager utama Anda
+          builder: (_) => const ManagerDashboardPage(), 
+        ),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const HomePage(),
+        ),
+      );
+    }
   }
 
   @override

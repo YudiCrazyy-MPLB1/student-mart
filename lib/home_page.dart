@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import 'product_model.dart';
 import 'cart_controller.dart';
@@ -8,6 +9,8 @@ import 'order_page.dart';
 import 'api_service.dart';
 import 'login_page.dart';
 import 'sapaan_random.dart';
+
+Timer? _debounceTimer;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -94,11 +97,15 @@ class _HomePageState extends State<HomePage> {
   // =====================================================
 
   void _searchUpdated() {
-    if (!mounted) return;
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer?.cancel();
+    }
 
-    setState(() {
-      searchQuery =
-          searchController.text.trim().toLowerCase();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() {
+        searchQuery = searchController.text.trim().toLowerCase();
+      });
     });
   }
 
