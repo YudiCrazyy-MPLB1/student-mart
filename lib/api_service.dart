@@ -12,7 +12,7 @@ import 'package:image_picker/image_picker.dart';
 
 class ApiService {
   static const flutterSecureStorage = FlutterSecureStorage();
-  static final String baseUrl = dotenv.env['BASE_URL'] ?? 'http://localhost/api';
+  static final String baseUrl = dotenv.env['BASE_URL'] ?? '[http://127.0.0.1:8000/api](http://127.0.0.1:8000/api)';
 
   static const Duration requestTimeout =
       Duration(seconds: 15);
