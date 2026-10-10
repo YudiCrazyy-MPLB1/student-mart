@@ -7,3 +7,4 @@ const Color pageBackground = Color(0xFFF6F8F6);
 const Color textDark = Color(0xFF20354A);
 const Color textMuted = Color(0xFF7B8A9A);
 const Color paleGreen = Color(0xFFE3F2FD);
+const Color paleRed = Color(0xFFFDE3E3);
