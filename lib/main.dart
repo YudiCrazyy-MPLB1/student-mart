@@ -4,11 +4,9 @@ import 'api_service.dart';
 import 'auth_check_page.dart';
 import 'home_page.dart';
 import 'manager_dashboard_page.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
   // Hanya membaca token + role dari penyimpanan lokal.
   // Tidak melakukan request ke Laravel.
   await ApiService.loadToken();
