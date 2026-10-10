@@ -48,5 +48,4 @@ app.*.map.json
 .widget_preview/
 
 # File konfigurasi rahasia
-.env
-.env*
+/assets/.env
