@@ -1,18 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'product_model.dart';
+import 'config.dart';
 
 import 'package:image_picker/image_picker.dart';
 
 class ApiService {
   static const flutterSecureStorage = FlutterSecureStorage();
-  static final String baseUrl = dotenv.env['BASE_URL'] ?? '[http://127.0.0.1:8000/api](http://127.0.0.1:8000/api)';
+  static final String baseUrl = Config.baseUrl;
 
   static const Duration requestTimeout =
       Duration(seconds: 15);
