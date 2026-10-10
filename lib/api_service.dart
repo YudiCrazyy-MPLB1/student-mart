@@ -3,13 +3,14 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'product_model.dart';
 
 import 'package:image_picker/image_picker.dart';
 
 class ApiService {
+  static const flutterSecureStorage = FlutterSecureStorage();
   static const String baseUrl =
       'http://127.0.0.1:8000/api';
 
@@ -30,11 +31,8 @@ class ApiService {
   // ============================================================
 
   static Future<void> loadToken() async {
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    authToken = prefs.getString(_tokenKey);
-    userRole = prefs.getString(_roleKey);
+    authToken = await flutterSecureStorage.read(key: _tokenKey);
+    userRole = await flutterSecureStorage.read(key: _roleKey);
 
     // Kalau token tidak ada, role juga tidak diperlukan.
     if (authToken == null || authToken!.isEmpty) {
@@ -52,19 +50,16 @@ class ApiService {
       userRole = role.toLowerCase();
     }
 
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      _tokenKey,
-      token,
+    await flutterSecureStorage.write(
+      key: _tokenKey,
+      value: token,
     );
 
     if (userRole != null &&
         userRole!.isNotEmpty) {
-      await prefs.setString(
-        _roleKey,
-        userRole!,
+      await flutterSecureStorage.write(
+        key: _roleKey,
+        value: userRole!,
       );
     }
   }
@@ -73,11 +68,8 @@ class ApiService {
     authToken = null;
     userRole = null;
 
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_roleKey);
+    await flutterSecureStorage.delete(key: _tokenKey);
+    await flutterSecureStorage.delete(key: _roleKey);
   }
 
   // ============================================================
@@ -417,13 +409,9 @@ class ApiService {
           role.isNotEmpty) {
         userRole = role.toLowerCase();
 
-        final prefs =
-            await SharedPreferences
-                .getInstance();
-
-        await prefs.setString(
-          _roleKey,
-          userRole!,
+        await flutterSecureStorage.write(
+          key: _roleKey,
+          value: userRole!,
         );
       }
 

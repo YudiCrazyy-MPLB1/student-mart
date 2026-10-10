@@ -137,6 +137,8 @@ class _RegisterPageState extends State<RegisterPage> {
     String message, {
     bool isError = false,
   }) {
+    if (!mounted) return;
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
