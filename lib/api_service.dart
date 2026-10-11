@@ -223,6 +223,7 @@ class ApiService {
     required String email,
     required String password,
     required String passwordConfirmation,
+    required String kodeUndangan,
   }) async {
     try {
       final response = await http
@@ -236,8 +237,8 @@ class ApiService {
               'name': name.trim(),
               'email': email.trim(),
               'password': password,
-              'password_confirmation':
-                  passwordConfirmation,
+              'password_confirmation': passwordConfirmation,
+              'kode_undangan': kodeUndangan.trim(),
             }),
           )
           .timeout(requestTimeout);

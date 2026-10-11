@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
-import 'home_page.dart';
 
 const Color brandGreen = Color(0xFF1976D2); // Biru utama
 const Color darkGreen = Color(0xFF0D47A1); // Biru gelap
@@ -23,6 +22,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final kodeUndanganController = TextEditingController();
 
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
@@ -34,6 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    kodeUndanganController.dispose();
     super.dispose();
   }
 
@@ -45,11 +46,13 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = emailController.text.trim();
     final password = passwordController.text;
     final confirmation = confirmPasswordController.text;
+    final kodeUndangan = kodeUndanganController.text.trim();
 
     if (name.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
-        confirmation.isEmpty) {
+        confirmation.isEmpty ||
+        kodeUndangan.isEmpty) {
       _showMessage(
         'Semua kolom wajib diisi.',
         isError: true,
@@ -93,6 +96,7 @@ class _RegisterPageState extends State<RegisterPage> {
         email: email,
         password: password,
         passwordConfirmation: confirmation,
+        kodeUndangan: kodeUndangan,
       );
 
       if (!mounted) return;
@@ -111,13 +115,8 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       );
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const HomePage(),
-        ),
-        (route) => false,
-      );
+      Navigator.pop(context);
+      
     } catch (e) {
       if (!mounted) return;
 
@@ -498,7 +497,7 @@ const SizedBox(height: 8),
               icon: Icons.verified_user_outlined,
               controller: confirmPasswordController,
               obscureText: obscureConfirmPassword,
-              textInputAction: TextInputAction.done,
+              textInputAction: TextInputAction.next,
               onSubmitted: _register,
               suffixIcon: IconButton(
                 tooltip: obscureConfirmPassword
@@ -520,6 +519,16 @@ const SizedBox(height: 8),
                   size: 20,
                 ),
               ),
+            ),
+
+            const SizedBox(height: 18),
+            _inputField(
+              label: 'Kode Undangan',
+              hint: 'Masukkan kode undangan',
+              icon: Icons.vpn_key_outlined,
+              controller: kodeUndanganController,
+              textInputAction: TextInputAction.done,
+              onSubmitted: _register,
             ),
 
             const SizedBox(height: 14),
