@@ -77,17 +77,48 @@ class _CheckoutPageState extends State<CheckoutPage> {
           );
         },
       );
-    } catch (e) {
+    } 
+    catch (e) {
       if (!mounted) return;
 
       setState(() {
         isProcessing = false;
       });
 
+      final errorText = e.toString();
+
+      if (errorText.contains('401') || errorText.toLowerCase().contains('unauthorized')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sesi telah habis. Silakan login kembali.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        // Tendang ke halaman login
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+        return; 
+      }
+
+      if (errorText.contains('422') || errorText.toLowerCase().contains('stok')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            // Menampilkan pesan asli dari Laravel ("Stok Mie Ayam tidak mencukupi...")
+            content: Text(errorText.replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.orange.shade800, // Warna orange/merah agar terlihat sebagai peringatan
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        
+        // (Opsional) Jika ingin me-refresh keranjang otomatis saat stok habis:
+        // cartController.clearCart(); 
+        
+        return; 
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Checkout gagal: ${e.toString().replaceFirst('Exception: ', '')}',
+            'Checkout gagal: ${errorText.replaceFirst('Exception: ', '')}',
           ),
           backgroundColor: Colors.red,
         ),

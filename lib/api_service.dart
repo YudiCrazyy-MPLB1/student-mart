@@ -1166,8 +1166,7 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
   // PRODUCTS
   // ============================================================
 
-  static Future<List<Product>>
-      getProducts() async {
+  static Future<List<Product>> getProducts() async {
     try {
       final response = await http
           .get(
@@ -1176,8 +1175,7 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
           )
           .timeout(requestTimeout);
 
-      final json =
-          _decodeResponse(response);
+      final json = _decodeResponse(response);
 
       if (response.statusCode == 401) {
         await clearToken();
@@ -1189,20 +1187,29 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
 
       if (response.statusCode != 200) {
         throw Exception(
-          json['message'] ??
-              'Gagal mengambil produk.',
+          json['message'] ?? 'Gagal mengambil produk.',
         );
       }
 
       if (json['success'] != true) {
         throw Exception(
-          json['message'] ??
-              'Gagal mengambil produk.',
+          json['message'] ?? 'Gagal mengambil produk.',
         );
       }
 
-      final List<dynamic> data =
-          json['data'] ?? [];
+      // ===================================================
+      // LOGIKA BARU UNTUK MENANGANI PAGINATION
+      // ===================================================
+      final responseData = json['data'];
+      List<dynamic> data = [];
+
+      if (responseData is Map && responseData['data'] is List) {
+        // Jika Laravel menggunakan paginate()
+        data = List<dynamic>.from(responseData['data']);
+      } else if (responseData is List) {
+        // Jika Laravel menggunakan get() biasa
+        data = List<dynamic>.from(responseData);
+      }
 
       return data
           .map(
@@ -1211,6 +1218,7 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
             ),
           )
           .toList();
+          
     } on TimeoutException {
       throw Exception(
         'Mengambil produk terlalu lama.',
