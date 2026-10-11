@@ -168,31 +168,7 @@ class ApiService {
           Map<String, dynamic>.from(
         json['data'] ?? {},
       );
-
-      final token = data['token'];
-
-      if (token == null ||
-          token.toString().isEmpty) {
-        throw Exception(
-          'Token login tidak diterima dari server.',
-        );
-      }
-
-      // Ambil role dari user
-      final user = data['user'];
-
-      String? role;
-
-      if (user is Map<String, dynamic>) {
-        role = user['role']?.toString();
-      }
-
-      // Simpan token + role
-      await saveToken(
-        token.toString(),
-        role,
-      );
-
+    
       return data;
     } on TimeoutException {
       throw Exception(
