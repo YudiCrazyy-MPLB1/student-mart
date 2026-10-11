@@ -168,7 +168,22 @@ class ApiService {
           Map<String, dynamic>.from(
         json['data'] ?? {},
       );
-    
+
+      final token = data['token'];
+      final user = data['user'];
+      String? role;
+
+      if (user is Map<String, dynamic>) {
+        role = user['role']?.toString();
+      }
+
+      if (token != null && token.toString().isNotEmpty) {
+        await saveToken(
+          token.toString(),
+          role ?? 'student',
+        );
+      }
+
       return data;
     } on TimeoutException {
       throw Exception(
