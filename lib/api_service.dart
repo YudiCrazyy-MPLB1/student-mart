@@ -1714,4 +1714,40 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
       throw Exception('Gagal memverifikasi produk: ${response.body}');
     }
   }
+  static Future<void> submitAdvertisement({
+    required String title,
+    required String targetUrl,
+    required String packageType,
+    required String paymentMethod,
+    required Uint8List imageBytes,
+    required String imageName,
+  }) async {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/advertisements/submit'),
+    );
+
+    // Langsung gunakan _headers yang sudah otomatis mengurus Authorization token
+    request.headers.addAll(_headers);
+
+    request.fields['title'] = title;
+    request.fields['target_url'] = targetUrl;
+    request.fields['package_type'] = packageType;
+    request.fields['payment_method'] = paymentMethod;
+
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'image',
+        imageBytes,
+        filename: imageName,
+      ),
+    );
+
+    var streamedResponse = await request.send().timeout(requestTimeout);
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception('Gagal mengajukan iklan: ${response.body}');
+    }
+  }
 }

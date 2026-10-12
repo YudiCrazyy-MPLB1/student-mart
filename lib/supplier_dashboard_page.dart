@@ -6,7 +6,6 @@ import 'api_service.dart';
 import 'tos_dialog.dart'; // Import dialog TOS yang dibuat sebelumnya
 
 class SupplierDashboardPage extends StatefulWidget {
-  // Bawa data user dari halaman sebelumnya untuk mengecek status is_supplier
   const SupplierDashboardPage({super.key});
 
   @override
@@ -60,15 +59,18 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
     );
 
     if (setuju == true) {
-      setState(() => _isLoading = true);
-      try {
-        await ApiService.agreeTos(); 
-        await _loadUserData(); // Muat ulang status user setelah setuju TOS
-        _showMessage('Berhasil! Anda sekarang adalah pemasok Student Mart.');
-      } catch (e) {
-        _showMessage(e.toString(), isError: true);
-      } finally {
-        setState(() => _isLoading = false);
+      // Jika dipanggil dari tombol daftar dan belum jadi supplier
+      if (!_isSupplier) {
+        setState(() => _isLoading = true);
+        try {
+          await ApiService.agreeTos(); 
+          await _loadUserData(); 
+          _showMessage('Berhasil! Anda sekarang adalah pemasok Student Mart.');
+        } catch (e) {
+          _showMessage(e.toString(), isError: true);
+        } finally {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
@@ -79,7 +81,6 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
-      // Untuk Flutter Web, kita gunakan readAsBytes() 
       final bytes = await image.readAsBytes();
       setState(() {
         _selectedImageBytes = bytes;
@@ -112,7 +113,6 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
 
       _showMessage('Produk berhasil diajukan! Menunggu verifikasi Admin.');
       
-      // Kosongkan form setelah sukses
       _nameController.clear();
       _descController.clear();
       _priceController.clear();
@@ -144,6 +144,14 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
       appBar: AppBar(
         title: const Text('Dashboard Pemasok', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 27, 177, 164),
+        actions: [
+          // TOMBOL BACA ULANG TOS (Muncul di pojok kanan atas kapan saja)
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Colors.white),
+            tooltip: 'Syarat & Ketentuan Konsinyasi',
+            onPressed: _tampilkanTOS,
+          ),
+        ],
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator()) 
@@ -207,7 +215,6 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
               ),
               const SizedBox(height: 24),
               
-              // Kolom Input
               TextField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nama Barang', border: OutlineInputBorder()),
@@ -240,7 +247,6 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
               ),
               const SizedBox(height: 24),
               
-              // Pilih Gambar
               Row(
                 children: [
                   ElevatedButton.icon(
@@ -264,7 +270,6 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
               
               const SizedBox(height: 32),
               
-              // Tombol Ajukan
               SizedBox(
                 width: double.infinity,
                 height: 50,

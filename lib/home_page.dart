@@ -10,6 +10,7 @@ import 'api_service.dart';
 import 'login_page.dart';
 import 'sapaan_random.dart';
 import 'supplier_dashboard_page.dart';
+import 'submit_advertisement_page.dart';
 
 Timer? _debounceTimer;
 
@@ -430,6 +431,19 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                 ),
+
+                IconButton(
+  icon: const Icon(Icons.ads_click),
+  tooltip: 'Pasang Iklan',
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SubmitAdvertisementPage(),
+      ),
+    );
+  },
+),
 
                 // LOGOUT
                 ListTile(
