@@ -1750,4 +1750,56 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
       throw Exception('Gagal mengajukan iklan: ${response.body}');
     }
   }
+
+  // Mengambil daftar iklan yang masih pending (butuh verifikasi)
+  static Future<List<dynamic>> getPendingAds() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/manager/advertisements/pending'),
+      headers: _headers,
+    ).timeout(requestTimeout);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data'] ?? [];
+    } else {
+      throw Exception('Gagal memuat antrean iklan: ${response.body}');
+    }
+  }
+
+  // Memverifikasi iklan (Setujui / Tolak)
+  static Future<Map<String, dynamic>> verifyAd({
+    required int adId,
+    required String action, // 'approve' atau 'reject'
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/manager/advertisements/$adId/verify'),
+      headers: _headers,
+      body: jsonEncode({
+        'action': action,
+      }),
+    ).timeout(requestTimeout);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Gagal memverifikasi iklan: ${response.body}');
+    }
+  }
+
+  static Future<List<dynamic>> getActiveAds() async {
+    // Ingat, route ini bersifat public di api.php
+    final response = await http.get(
+      Uri.parse('$baseUrl/advertisements'), 
+      headers: {
+        'Accept': 'application/json',
+      },
+    ).timeout(requestTimeout);
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return json['data'] ?? [];
+    } else {
+      return []; // Return list kosong jika gagal agar tidak merusak tampilan Home
+    }
+  }
 }

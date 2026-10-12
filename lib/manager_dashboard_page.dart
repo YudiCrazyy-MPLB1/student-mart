@@ -7,6 +7,7 @@ import 'accounting_dashboard_page.dart';
 import 'login_page.dart';
 import 'sapaan_random.dart';
 import 'manager_verification_page.dart';
+import 'submit_advertisement_page.dart';
 
 class ManagerDashboardPage extends StatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -730,6 +731,24 @@ Widget build(BuildContext context) {
                 },
               ),
             ),
+
+            const SizedBox(width: 12),
+
+            Expanded(child: _buildActionCard(
+              title: 'Iklan',
+              subtitle:
+                  'Kelola iklan promosi',
+              icon: Icons.campaign_rounded,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const SubmitAdvertisementPage(),
+                  ),
+                );
+              },
+            )),
           ],
         ),
       ],

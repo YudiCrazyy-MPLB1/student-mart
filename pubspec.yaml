@@ -42,6 +42,7 @@ dependencies:
   firebase_messaging: ^16.7.0
   flutter_secure_storage: ^11.2.0
   flutter_dotenv: ^6.0.1
+  carousel_slider: ^5.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:carousel_slider/carousel_slider.dart'; // Import Carousel Slider
 
 import 'product_model.dart';
 import 'cart_controller.dart';
@@ -45,6 +46,12 @@ class _HomePageState extends State<HomePage> {
   String? errorMessage;
 
   // =====================================================
+  // ADVERTISEMENTS (IKLAN)
+  // =====================================================
+  List<dynamic> activeAds = [];
+  bool isLoadingAds = true;
+
+  // =====================================================
   // SEARCH
   // =====================================================
 
@@ -66,6 +73,7 @@ class _HomePageState extends State<HomePage> {
     cartController.addListener(_cartUpdated);
     searchController.addListener(_searchUpdated);
 
+    _loadAds(); // Load ads saat inisialisasi
     _loadProducts();
     _loadCategories();
   }
@@ -109,6 +117,27 @@ class _HomePageState extends State<HomePage> {
         searchQuery = searchController.text.trim().toLowerCase();
       });
     });
+  }
+
+  // =====================================================
+  // LOAD ADS
+  // =====================================================
+
+  Future<void> _loadAds() async {
+    if (!mounted) return;
+    setState(() => isLoadingAds = true);
+    
+    try {
+      final data = await ApiService.getActiveAds();
+      if (mounted) {
+        setState(() {
+          activeAds = data;
+          isLoadingAds = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => isLoadingAds = false);
+    }
   }
 
   // =====================================================
@@ -199,6 +228,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _refreshHome() async {
     await Future.wait([
+      _loadAds(), // Refresh ads
       _loadProducts(),
       _loadCategories(),
     ]);
@@ -921,55 +951,89 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 20),
 
               // =========================================
-              // PROMO
+              // ADVERTISEMENT BANNER / PROMO
               // =========================================
-
-              Container(
-                width: double.infinity,
-
-                padding:
-                    const EdgeInsets.all(20),
-
-                decoration:
-                    BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(
-                    18,
+              
+              if (isLoadingAds)
+                const SizedBox(
+                  height: 160,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (activeAds.isNotEmpty)
+                CarouselSlider(
+                  options: CarouselOptions(
+                    height: 160.0,
+                    autoPlay: true, 
+                    autoPlayInterval: const Duration(seconds: 4),
+                    enlargeCenterPage: true,
+                    viewportFraction: 0.9,
+                    aspectRatio: 16 / 9,
+                    autoPlayAnimationDuration: const Duration(milliseconds: 800),
                   ),
-                  color: Colors.blue,
-                ),
-
-                child: const Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
-                  children: [
-                    Text(
-                      'PROMO STUDENT MART 🎉',
-                      style:
-                          TextStyle(
-                        color:
-                            Colors.white,
-                        fontSize: 20,
-                        fontWeight:
-                            FontWeight.bold,
+                  items: activeAds.map((ad) {
+                    return Builder(
+                      builder: (BuildContext context) {
+                        return GestureDetector(
+                          onTap: () {
+                            // Tindakan opsional saat banner diklik
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(18),
+                              color: Colors.grey.shade200, 
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  spreadRadius: 1,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                )
+                              ]
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: ad['image'] != null
+                                  ? Image.network(
+                                      ApiService.getImageUrl(ad['image']),
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
+                                    )
+                                  : const Center(child: Icon(Icons.campaign, size: 50, color: Colors.teal)),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
+                )
+              else
+                // FALLBACK JIKA BELUM ADA IKLAN AKTIF
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    color: Colors.blue,
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'PROMO STUDENT MART 🎉',
+                        style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                    ),
-
-                    SizedBox(height: 8),
-
-                    Text(
-                      'Belanja kebutuhan sekolah lebih mudah!',
-                      style:
-                          TextStyle(
-                        color:
-                            Colors.white,
-                        fontSize: 14,
+                      SizedBox(height: 8),
+                      Text(
+                        'Belanja kebutuhan sekolah lebih mudah!',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
               const SizedBox(height: 24),
 
