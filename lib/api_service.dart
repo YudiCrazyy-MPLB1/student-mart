@@ -1683,7 +1683,7 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
   // 3. Fungsi Mengambil Daftar Produk Pending (Khusus Admin)
   static Future<List<dynamic>> getPendingProducts() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/consignment/products/pending'),
+      Uri.parse('$baseUrl/manager/consignment/products/pending'),
       headers: _headers, // Langsung gunakan bawaan _headers
     );
 
@@ -1701,7 +1701,7 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
     required String status,
   }) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/consignment/products/$productId/verify'),
+      Uri.parse('$baseUrl/manager/consignment/products/$productId/verify'),
       headers: _headers, // Langsung gunakan bawaan _headers
       body: jsonEncode({
         'status': status,
