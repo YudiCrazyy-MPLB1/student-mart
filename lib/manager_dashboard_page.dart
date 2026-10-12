@@ -6,6 +6,7 @@ import 'manager_product_page.dart';
 import 'accounting_dashboard_page.dart';
 import 'login_page.dart';
 import 'sapaan_random.dart';
+import 'manager_verification_page.dart';
 
 class ManagerDashboardPage extends StatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -655,6 +656,7 @@ Widget build(BuildContext context) {
 
         const SizedBox(height: 12),
 
+        // BARIS PERTAMA (Produk & Pesanan)
         Row(
           children: [
             Expanded(
@@ -680,9 +682,14 @@ Widget build(BuildContext context) {
                 onTap: _openOrders,
               ),
             ),
-
-            const SizedBox(width: 12),
-
+          ],
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // BARIS KEDUA (Inventaris & Verifikasi Konsinyasi)
+        Row(
+          children: [
             Expanded(
               child: _buildActionCard(
                 title: 'Inventaris',
@@ -696,6 +703,28 @@ Widget build(BuildContext context) {
                     MaterialPageRoute(
                       builder: (_) =>
                           const AccountingDashboardPage(),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // MENU BARU: VERIFIKASI KONSINYASI
+            Expanded(
+              child: _buildActionCard(
+                title: 'Verifikasi Barang',
+                subtitle:
+                    'Tinjau konsinyasi siswa',
+                icon:
+                    Icons.fact_check_rounded,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const ManagerVerificationPage(),
                     ),
                   );
                 },

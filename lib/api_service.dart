@@ -1623,4 +1623,95 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
       );
     }
   }
+
+  // ============================================================
+  // CONSIGNMENT (KONSINYASI)
+  // ============================================================
+
+  // 1. Fungsi menyetujui TOS
+  static Future<Map<String, dynamic>> agreeTos() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/consignment/tos'),
+      headers: _headers, // Langsung gunakan bawaan _headers
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Gagal menyetujui TOS: ${response.body}');
+    }
+  }
+
+  // 2. Fungsi Upload Produk Konsinyasi (Mendukung Web via bytes)
+  static Future<Map<String, dynamic>> submitConsignmentProduct({
+    required String name,
+    required String description,
+    required String price,
+    required String stock,
+    required List<int> imageBytes,
+    required String imageName,
+  }) async {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/consignment/products'),
+    );
+
+    request.headers.addAll(_headers); // Langsung gunakan bawaan _headers
+
+    request.fields['name'] = name;
+    request.fields['description'] = description;
+    request.fields['price'] = price;
+    request.fields['stock'] = stock;
+
+    var multipartFile = http.MultipartFile.fromBytes(
+      'image',
+      imageBytes,
+      filename: imageName,
+    );
+    request.files.add(multipartFile);
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Gagal mengunggah produk: ${response.body}');
+    }
+  }
+
+  // 3. Fungsi Mengambil Daftar Produk Pending (Khusus Admin)
+  static Future<List<dynamic>> getPendingProducts() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/consignment/products/pending'),
+      headers: _headers, // Langsung gunakan bawaan _headers
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data']; 
+    } else {
+      throw Exception('Gagal memuat produk pending: ${response.body}');
+    }
+  }
+
+  // 4. Fungsi Verifikasi Produk (Setujui / Tolak)
+  static Future<Map<String, dynamic>> verifyProduct({
+    required int productId,
+    required String status,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/consignment/products/$productId/verify'),
+      headers: _headers, // Langsung gunakan bawaan _headers
+      body: jsonEncode({
+        'status': status,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Gagal memverifikasi produk: ${response.body}');
+    }
+  }
 }
