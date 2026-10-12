@@ -1802,4 +1802,18 @@ static Future<Map<String, dynamic>> inventoryAdjustment({
       return []; // Return list kosong jika gagal agar tidak merusak tampilan Home
     }
   }
+
+  static Future<List<dynamic>> getMyConsignmentProducts() async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/consignment/my-products'),
+    headers: _headers,
+  ).timeout(requestTimeout);
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['data'] ?? [];
+  } else {
+    throw Exception('Gagal memuat produk saya: ${response.body}');
+  }
+}
 }

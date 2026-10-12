@@ -77,7 +77,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
     try {
       // Pastikan method getMyConsignmentProducts tersedia di ApiService Anda, 
       // atau gunakan endpoint yang sesuai untuk mengambil produk milik supplier yang sedang login.
-      final products = await ApiService.getPendingProducts(); // Sesuaikan jika ada endpoint khusus produk saya
+      final products = await ApiService.getMyConsignmentProducts(); // Sesuaikan jika ada endpoint khusus produk saya
       setState(() {
         _myProducts = products;
       });

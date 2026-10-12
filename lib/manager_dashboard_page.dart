@@ -655,7 +655,7 @@ Widget build(BuildContext context) {
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
 
         // BARIS PERTAMA (Produk & Pesanan)
         Row(
@@ -671,7 +671,7 @@ Widget build(BuildContext context) {
               ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 6),
 
             Expanded(
               child: _buildActionCard(
@@ -686,7 +686,7 @@ Widget build(BuildContext context) {
           ],
         ),
         
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         
         // BARIS KEDUA (Inventaris & Verifikasi Konsinyasi)
         Row(
@@ -710,7 +710,7 @@ Widget build(BuildContext context) {
               ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 6),
 
             // MENU BARU: VERIFIKASI KONSINYASI
             Expanded(
@@ -732,7 +732,7 @@ Widget build(BuildContext context) {
               ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 6),
 
             Expanded(child: _buildActionCard(
               title: 'Iklan',
