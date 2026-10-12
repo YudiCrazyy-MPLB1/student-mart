@@ -6,15 +6,8 @@ import 'api_service.dart';
 import 'tos_dialog.dart'; // Import dialog TOS yang dibuat sebelumnya
 
 class SupplierDashboardPage extends StatefulWidget {
-  final String token;
   // Bawa data user dari halaman sebelumnya untuk mengecek status is_supplier
-  final Map<String, dynamic> userData; 
-
-  const SupplierDashboardPage({
-    super.key,
-    required this.token,
-    required this.userData,
-  });
+  const SupplierDashboardPage({super.key});
 
   @override
   State<SupplierDashboardPage> createState() => _SupplierDashboardPageState();
@@ -22,7 +15,7 @@ class SupplierDashboardPage extends StatefulWidget {
 
 class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
   bool _isSupplier = false;
-  bool _isLoading = false;
+  bool _isLoading = true; // Set awal true untuk loading data user
 
   // Controller Form
   final _nameController = TextEditingController();
@@ -30,17 +23,30 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
 
-  // Variabel untuk menampung gambar
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
 
   @override
   void initState() {
     super.initState();
-    // Cek apakah user sudah pernah menyetujui TOS
-    // Tergantung tipe data dari database Laravel (bisa 1, '1', atau true)
-    final supplierStatus = widget.userData['is_supplier'];
-    _isSupplier = (supplierStatus == 1 || supplierStatus == true || supplierStatus == '1');
+    _loadUserData();
+  }
+
+  // --- AMBIL DATA USER TERBARU DARI API ---
+  Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = await ApiService.getMe();
+      final supplierStatus = user['is_supplier'];
+      
+      setState(() {
+        _isSupplier = (supplierStatus == 1 || supplierStatus == true || supplierStatus == '1');
+      });
+    } catch (e) {
+      _showMessage('Gagal memuat status akun: $e', isError: true);
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   // --- FUNGSI MUNCULKAN TOS ---
@@ -49,17 +55,15 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return const TosDialog(); // Memanggil UI TOS
+        return const TosDialog();
       },
     );
 
     if (setuju == true) {
       setState(() => _isLoading = true);
       try {
-        await ApiService.agreeTos(); // Fungsi untuk mengirim persetujuan ke backend
-        setState(() {
-          _isSupplier = true; // Langsung ubah UI ke form
-        });
+        await ApiService.agreeTos(); 
+        await _loadUserData(); // Muat ulang status user setelah setuju TOS
         _showMessage('Berhasil! Anda sekarang adalah pemasok Student Mart.');
       } catch (e) {
         _showMessage(e.toString(), isError: true);
