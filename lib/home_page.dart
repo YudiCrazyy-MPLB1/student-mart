@@ -9,6 +9,7 @@ import 'order_page.dart';
 import 'api_service.dart';
 import 'login_page.dart';
 import 'sapaan_random.dart';
+import 'supplier_dashboard_page.dart';
 
 Timer? _debounceTimer;
 
@@ -403,6 +404,30 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pop(context);
 
                     _showProfileDialog(user);
+                  },
+                ),
+
+                ListTile(
+                  leading: const Icon(
+                    Icons.storefront_rounded,
+                    color: Colors.blue,
+                  ),
+                  title: const Text(
+                    'Pusat Pemasok / Konsinyasi',
+                  ),
+                  subtitle: const Text(
+                    'Daftar & jual produk titipanmu',
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+
+                    // Navigasi ke Supplier Dashboard Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SupplierDashboardPage(),
+                      ),
+                    );
                   },
                 ),
 
