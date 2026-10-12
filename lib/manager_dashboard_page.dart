@@ -7,7 +7,7 @@ import 'accounting_dashboard_page.dart';
 import 'login_page.dart';
 import 'sapaan_random.dart';
 import 'manager_verification_page.dart';
-import 'submit_advertisement_page.dart';
+import 'manager_ads_page.dart';
 
 class ManagerDashboardPage extends StatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -744,7 +744,7 @@ Widget build(BuildContext context) {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        const SubmitAdvertisementPage(),
+                        const ManagerAdsPage(),
                   ),
                 );
               },
