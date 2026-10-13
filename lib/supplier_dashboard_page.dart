@@ -469,9 +469,9 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: p['image'] != null
+                                  child: p['image_url'] != null
                                       ? Image.network(
-                                          p['image'],
+                                          p['image_url'],
                                           width: 60,
                                           height: 60,
                                           fit: BoxFit.cover,

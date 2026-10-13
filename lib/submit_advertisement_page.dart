@@ -118,7 +118,7 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Promosikan produk kantin, konsinyasi, atau usahamu agar tampil di halaman utama.',
+                  'Promosikan produk atau usahamu agar tampil di halaman utama.',
                   style: TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 24),
