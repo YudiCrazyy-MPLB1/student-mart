@@ -118,7 +118,7 @@ class ApiService {
     // menjadi:
     // http://127.0.0.1:8000
     final serverUrl = baseUrl.replaceFirst(
-      RegExp(r'/api$'),
+      RegExp(r'/api(/v1)?$'),
       '',
     );
 
