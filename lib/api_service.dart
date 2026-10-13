@@ -122,7 +122,7 @@ class ApiService {
       '',
     );
 
-    return '$serverUrl/storage/$cleanPath';
+    return '$serverUrl/$cleanPath';
   }
 
   // ============================================================
