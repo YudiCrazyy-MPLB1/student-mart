@@ -113,16 +113,14 @@ class ApiService {
         ? value.substring(1)
         : value;
 
-    // Ubah:
-    // http://127.0.0.1:8000/api
-    // menjadi:
-    // http://127.0.0.1:8000
     final serverUrl = baseUrl.replaceFirst(
       RegExp(r'/api(/v1)?$'),
       '',
     );
 
-    return '$serverUrl/$cleanPath';
+    // Memecah path dan melakukan encode pada nama file/folder agar spasi terbaca aman
+    final uri = Uri.parse('$serverUrl/$cleanPath');
+    return uri.toString();
   }
 
   // ============================================================
