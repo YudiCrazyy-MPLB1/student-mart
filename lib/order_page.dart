@@ -66,20 +66,35 @@ class _OrderPageState extends State<OrderPage> {
     return 'Rp ${buffer.toString()}';
   }
 
+  String formatStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Menunggu Pembayaran';
+      case 'processing':
+        return 'Diproses';
+      case 'completed':
+      case 'complete':
+        return 'Selesai';
+      case 'cancelled':
+      case 'canceled':
+        return 'Dibatalkan';
+      default:
+        return status;
+    }
+  }
+
   Color statusColor(String status) {
-    switch (status) {
-      case 'Selesai':
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'complete':
         return Colors.green;
-
-      case 'Siap Diambil':
+      case 'processing':
         return Colors.blue;
-
-      case 'Diproses':
+      case 'pending':
         return Colors.orange;
-
-      case 'Menunggu Pembayaran':
+      case 'cancelled':
+      case 'canceled':
         return Colors.red;
-
       default:
         return Colors.grey;
     }
@@ -265,7 +280,7 @@ class _OrderPageState extends State<OrderPage> {
                   ),
 
                   child: Text(
-                    status,
+                    formatStatus(status),
                     style: TextStyle(
                       color: statusColor(status),
                       fontWeight: FontWeight.bold,

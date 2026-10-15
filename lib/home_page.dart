@@ -12,6 +12,7 @@ import 'login_page.dart';
 import 'sapaan_random.dart';
 import 'supplier_dashboard_page.dart';
 import 'submit_advertisement_page.dart';
+import 'theme.dart' as theme;
 
 Timer? _debounceTimer;
 
@@ -385,9 +386,11 @@ class _HomePageState extends State<HomePage> {
                 // PROFILE ICON
                 const CircleAvatar(
                   radius: 38,
+                  backgroundColor: theme.paleGreen,
                   child: Icon(
-                    Icons.person,
+                    Icons.person_rounded,
                     size: 42,
+                    color: theme.darkGreen,
                   ),
                 ),
 
@@ -412,7 +415,7 @@ class _HomePageState extends State<HomePage> {
                     user!['email'].toString(),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.grey,
+                      color: theme.textMuted,
                     ),
                   ),
 
@@ -441,10 +444,10 @@ class _HomePageState extends State<HomePage> {
                 ListTile(
                   leading: const Icon(
                     Icons.storefront_rounded,
-                    color: Colors.blue,
+                    color: theme.darkGreen,
                   ),
                   title: const Text(
-                    'Pusat Pemasok / Konsinyasi',
+                    'Consignor Dashboard',
                   ),
                   subtitle: const Text(
                     'Daftar & jual produk titipanmu',
@@ -462,18 +465,28 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
 
-                IconButton(
-  icon: const Icon(Icons.ads_click),
-  tooltip: 'Pasang Iklan',
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SubmitAdvertisementPage(),
-      ),
-    );
-  },
-),
+                ListTile(
+                  leading: const Icon(
+                    Icons.campaign_rounded,
+                    color: theme.brandGreen,
+                  ),
+                  title: const Text(
+                    'Advertisement',
+                  ),
+                  subtitle: const Text(
+                    'Pasang iklan untuk promosimu',
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SubmitAdvertisementPage(),
+                      ),
+                    );
+                  },
+                ),
 
                 // LOGOUT
                 ListTile(
@@ -730,27 +743,26 @@ class _HomePageState extends State<HomePage> {
               width: 62,
               height: 62,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? Theme.of(context)
-                        .colorScheme
-                        .primary
-                    : Colors.white,
-                borderRadius:
-                    BorderRadius.circular(18),
+                color: isSelected ? darkGreen : Colors.white,
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isSelected
-                      ? Theme.of(context)
-                          .colorScheme
-                          .primary
-                      : Colors.grey.shade200,
+                  color: isSelected ? darkGreen : theme.paleGreen,
+                  width: 1.2,
                 ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: darkGreen.withOpacity(0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [],
               ),
               child: Icon(
                 icon,
-                color: isSelected
-                    ? Colors.white
-                    : Colors.blue,
-                size: 28,
+                color: isSelected ? Colors.white : brandGreen,
+                size: 27,
               ),
             ),
 
@@ -764,9 +776,10 @@ class _HomePageState extends State<HomePage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
+                color: isSelected ? darkGreen : theme.textDark,
                 fontWeight: isSelected
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+                    ? FontWeight.w700
+                    : FontWeight.w500,
               ),
             ),
           ],
@@ -785,8 +798,7 @@ class _HomePageState extends State<HomePage> {
         filteredProducts;
 
     return Scaffold(
-      backgroundColor:
-          Colors.grey.shade100,
+      backgroundColor: pageBackground,
 
       // =================================================
       // APP BAR
@@ -794,6 +806,8 @@ class _HomePageState extends State<HomePage> {
 
       appBar: AppBar(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: darkGreen,
         elevation: 0,
 
         title: Column(
@@ -802,17 +816,20 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               custgreetings,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
+              style: const TextStyle(
+                fontSize: 13,
+                color: theme.textMuted,
+                fontWeight: FontWeight.w500,
               ),
             ),
 
-            Text(
+            const Text(
               'Student Mart',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontSize: 21,
+                color: theme.textDark,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
               ),
             ),
           ],
@@ -832,7 +849,8 @@ class _HomePageState extends State<HomePage> {
               );
             },
             icon: const Icon(
-              Icons.notifications_none,
+              Icons.notifications_none_rounded,
+              color: darkGreen,
             ),
           ),
 
@@ -843,6 +861,7 @@ class _HomePageState extends State<HomePage> {
                 onPressed: _openCart,
                 icon: const Icon(
                   Icons.shopping_cart_outlined,
+                  color: darkGreen,
                 ),
               ),
 
@@ -909,12 +928,14 @@ class _HomePageState extends State<HomePage> {
 
                 decoration:
                     InputDecoration(
-                  hintText:
-                      'Cari produk...',
-
-                  prefixIcon:
-                      const Icon(
-                    Icons.search,
+                  hintText: 'Cari produk...',
+                  hintStyle: const TextStyle(
+                    color: theme.textMuted,
+                    fontSize: 14,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: brandGreen,
                   ),
 
                   suffixIcon:
@@ -924,26 +945,33 @@ class _HomePageState extends State<HomePage> {
                                 searchController
                                     .clear();
                               },
-                              icon:
-                                  const Icon(
-                                Icons.clear,
+                              icon: const Icon(
+                                Icons.clear_rounded,
+                                color: theme.textMuted,
                               ),
                             )
                           : null,
 
                   filled: true,
-
-                  fillColor:
-                      Colors.white,
-
-                  border:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      14,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 17,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: theme.paleGreen),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: brandGreen,
+                      width: 1.5,
                     ),
-                    borderSide:
-                        BorderSide.none,
                   ),
                 ),
               ),
@@ -957,7 +985,7 @@ class _HomePageState extends State<HomePage> {
               if (isLoadingAds)
                 const SizedBox(
                   height: 160,
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(child: CircularProgressIndicator(color: brandGreen)),
                 )
               else if (activeAds.isNotEmpty)
                 CarouselSlider(
@@ -982,15 +1010,16 @@ class _HomePageState extends State<HomePage> {
                             margin: const EdgeInsets.symmetric(horizontal: 5.0),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(18),
-                              color: Colors.grey.shade200, 
+                              color: theme.paleGreen,
+                              border: Border.all(color: theme.paleGreen),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.grey.withOpacity(0.3),
+                                  color: darkGreen.withOpacity(0.10),
                                   spreadRadius: 1,
-                                  blurRadius: 5,
-                                  offset: const Offset(0, 3),
-                                )
-                              ]
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(18),
@@ -1000,9 +1029,9 @@ class _HomePageState extends State<HomePage> {
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       errorBuilder: (context, error, stackTrace) =>
-                                          const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
+                                          const Center(child: Icon(Icons.broken_image_outlined, size: 46, color: theme.textMuted)),
                                     )
-                                  : const Center(child: Icon(Icons.campaign, size: 50, color: Colors.teal)),
+                                  : const Center(child: Icon(Icons.campaign_rounded, size: 46, color: darkGreen)),
                             ),
                           ),
                         );
@@ -1016,8 +1045,19 @@ class _HomePageState extends State<HomePage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [darkGreen, brandGreen],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: darkGreen.withOpacity(0.16),
+                        blurRadius: 16,
+                        offset: const Offset(0, 7),
+                      ),
+                    ],
                   ),
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1044,9 +1084,10 @@ class _HomePageState extends State<HomePage> {
               const Text(
                 'Kategori',
                 style: TextStyle(
+                  color: theme.textDark,
                   fontSize: 20,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
                 ),
               ),
 
@@ -1058,15 +1099,15 @@ class _HomePageState extends State<HomePage> {
                 child: isLoadingCategories
                     ? const Center(
                         child:
-                            CircularProgressIndicator(),
+                            CircularProgressIndicator(color: brandGreen),
                       )
                     : categories.isEmpty
                         ? const Center(
                             child: Text(
                               'Belum ada kategori.',
-                              style: TextStyle(
-                                color:
-                                    Colors.grey,
+                              style: const TextStyle(
+                                color: theme.textMuted,
+                                fontSize: 13,
                               ),
                             ),
                           )
@@ -1151,21 +1192,21 @@ class _HomePageState extends State<HomePage> {
                         ? 'Produk Populer'
                         : 'Produk $selectedCategory',
 
-                    style:
-                        const TextStyle(
+                    style: const TextStyle(
+                      color: theme.textDark,
                       fontSize: 20,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
                     ),
                   ),
 
                   if (searchQuery.isNotEmpty)
                     Text(
                       '${visibleProducts.length} hasil',
-                      style:
-                          const TextStyle(
-                        color:
-                            Colors.grey,
+                      style: const TextStyle(
+                        color: theme.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                 ],
@@ -1186,7 +1227,7 @@ class _HomePageState extends State<HomePage> {
 
                   child: Center(
                     child:
-                        CircularProgressIndicator(),
+                        CircularProgressIndicator(color: brandGreen),
                   ),
                 )
 
@@ -1205,10 +1246,9 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       children: [
                         const Icon(
-                          Icons.cloud_off,
-                          size: 60,
-                          color:
-                              Colors.grey,
+                          Icons.cloud_off_rounded,
+                          size: 58,
+                          color: theme.textMuted,
                         ),
 
                         const SizedBox(
@@ -1217,12 +1257,10 @@ class _HomePageState extends State<HomePage> {
 
                         const Text(
                           'Gagal mengambil produk',
-                          style:
-                              TextStyle(
+                          style: const TextStyle(
+                            color: theme.textDark,
                             fontSize: 18,
-                            fontWeight:
-                                FontWeight
-                                    .bold,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
 
@@ -1234,10 +1272,9 @@ class _HomePageState extends State<HomePage> {
                           errorMessage!,
                           textAlign:
                               TextAlign.center,
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.grey,
+                          style: const TextStyle(
+                            color: theme.textMuted,
+                            height: 1.45,
                           ),
                         ),
 
@@ -1249,14 +1286,22 @@ class _HomePageState extends State<HomePage> {
                             .icon(
                           onPressed:
                               _loadProducts,
-                          icon:
-                              const Icon(
-                            Icons.refresh,
+                          icon: const Icon(
+                            Icons.refresh_rounded,
                           ),
-                          label:
-                              const Text(
-                            'Coba Lagi',
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: darkGreen,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
+                          label: const Text('Coba Lagi'),
                         ),
                       ],
                     ),
@@ -1279,10 +1324,9 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       children: [
                         const Icon(
-                          Icons.search_off,
-                          size: 60,
-                          color:
-                              Colors.grey,
+                          Icons.search_off_rounded,
+                          size: 58,
+                          color: theme.textMuted,
                         ),
 
                         const SizedBox(
@@ -1301,11 +1345,10 @@ class _HomePageState extends State<HomePage> {
                           textAlign:
                               TextAlign.center,
 
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.grey,
-                            fontSize: 16,
+                          style: const TextStyle(
+                            color: theme.textMuted,
+                            fontSize: 15,
+                            height: 1.45,
                           ),
                         ),
 
@@ -1396,16 +1439,17 @@ class _HomePageState extends State<HomePage> {
                           12,
                         ),
 
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              Colors.white,
-
-                          borderRadius:
-                              BorderRadius
-                                  .circular(
-                            16,
-                          ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: theme.paleGreen, width: 0.9),
+                          boxShadow: [
+                            BoxShadow(
+                              color: darkGreen.withOpacity(0.045),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
                         ),
 
                         child: Column(
@@ -1446,8 +1490,7 @@ class _HomePageState extends State<HomePage> {
                                                   .shopping_bag,
                                               size:
                                                   70,
-                                              color:
-                                                  Colors.blue,
+                                              color: brandGreen,
                                             );
                                           },
                                         ),
@@ -1457,8 +1500,7 @@ class _HomePageState extends State<HomePage> {
                                             .shopping_bag,
                                         size:
                                             70,
-                                        color:
-                                            Colors.blue,
+                                        color: brandGreen,
                                       ),
                               ),
                             ),
@@ -1471,12 +1513,10 @@ class _HomePageState extends State<HomePage> {
                                   TextOverflow
                                       .ellipsis,
 
-                              style:
-                                  const TextStyle(
-                                fontSize: 16,
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
+                              style: const TextStyle(
+                                color: theme.textDark,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
 
@@ -1490,14 +1530,10 @@ class _HomePageState extends State<HomePage> {
                                 product.price,
                               ),
 
-                              style:
-                                  const TextStyle(
+                              style: const TextStyle(
                                 fontSize: 15,
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
-                                color:
-                                    Colors.blue,
+                                fontWeight: FontWeight.w800,
+                                color: darkGreen,
                               ),
                             ),
 
@@ -1509,17 +1545,10 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               'Stok: ${product.stock}',
 
-                              style:
-                                  TextStyle(
-                                fontSize:
-                                    12,
-                                color: product
-                                            .stock >
-                                        0
-                                    ? Colors
-                                        .grey
-                                    : Colors
-                                        .red,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: product.stock > 0 ? theme.textMuted : Colors.red,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
 
@@ -1544,6 +1573,21 @@ class _HomePageState extends State<HomePage> {
                                           }
                                         : null,
 
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: darkGreen,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: theme.paleGreen,
+                                  disabledForegroundColor: theme.textMuted,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
                                 child: Text(
                                   product.stock >
                                           0
@@ -1567,53 +1611,77 @@ class _HomePageState extends State<HomePage> {
       // BOTTOM NAVIGATION
       // =================================================
 
-      bottomNavigationBar:
-          NavigationBar(
-        selectedIndex: 0,
+      
+bottomNavigationBar: NavigationBarTheme(
+  data: NavigationBarThemeData(
+    backgroundColor: theme.pageBackground,
+    indicatorColor: theme.paleGreen,
+    elevation: 0,
 
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(
-              Icons.home_outlined,
-            ),
-            selectedIcon: Icon(
-              Icons.home,
-            ),
-            label: 'Home',
-          ),
+    // Warna ikon berdasarkan status terpilih
+    iconTheme: WidgetStateProperty.resolveWith<IconThemeData?>(
+      (states) {
+        final isSelected = states.contains(WidgetState.selected);
 
-          NavigationDestination(
-            icon: Icon(
-              Icons.receipt_long_outlined,
-            ),
-            selectedIcon: Icon(
-              Icons.receipt_long,
-            ),
-            label: 'Pesanan',
-          ),
+        return IconThemeData(
+          color: isSelected
+              ? theme.darkGreen
+              : theme.textMuted,
+        );
+      },
+    ),
 
-          NavigationDestination(
-            icon: Icon(
-              Icons.person_outline,
-            ),
-            selectedIcon: Icon(
-              Icons.person,
-            ),
-            label: 'Akun',
-          ),
-        ],
+    // Warna dan ketebalan teks navigasi
+    labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>(
+      (states) {
+        final isSelected = states.contains(WidgetState.selected);
 
-        onDestinationSelected:
-            (index) {
-          if (index == 1) {
-            _openOrders();
-          }
+        return TextStyle(
+          color: isSelected
+              ? theme.darkGreen
+              : theme.textMuted,
+          fontWeight: isSelected
+              ? FontWeight.w700
+              : FontWeight.w500,
+          fontSize: 12,
+        );
+      },
+    ),
+  ),
 
-          if (index == 2) {
-            _showAccountDialog();
-          }
-        },
+  child: NavigationBar(
+    selectedIndex: 0,
+
+    destinations: const [
+      NavigationDestination(
+        icon: Icon(Icons.home_outlined),
+        selectedIcon: Icon(Icons.home),
+        label: 'Home',
       ),
+      NavigationDestination(
+        icon: Icon(Icons.receipt_long_outlined),
+        selectedIcon: Icon(Icons.receipt_long),
+        label: 'Pesanan',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.person_outline),
+        selectedIcon: Icon(Icons.person),
+        label: 'Akun',
+      ),
+    ],
+
+    onDestinationSelected: (index) {
+      if (index == 1) {
+        _openOrders();
+      }
+
+      if (index == 2) {
+        _showAccountDialog();
+      }
+    },
+  ),
+),
+
     );
   }
 }
