@@ -205,11 +205,22 @@ class _ProductDetailPageState
               borderRadius:
                   BorderRadius.circular(20),
             ),
-            child: const Icon(
-              Icons.shopping_bag,
-              size: 120,
-              color: Colors.blue,
-            ),
+            child: currentProduct.image != null
+                ? ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(20),
+                    child: Image.network(
+                      currentProduct.image!,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: 60,
+                      color: Colors.grey,
+                    ),
+                  ),
           ),
 
           const SizedBox(height: 24),
