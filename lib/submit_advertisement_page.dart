@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'dart:typed_data';
 
 import 'api_service.dart';
@@ -8,7 +9,8 @@ class SubmitAdvertisementPage extends StatefulWidget {
   const SubmitAdvertisementPage({super.key});
 
   @override
-  State<SubmitAdvertisementPage> createState() => _SubmitAdvertisementPageState();
+  State<SubmitAdvertisementPage> createState() =>
+      _SubmitAdvertisementPageState();
 }
 
 class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
@@ -33,7 +35,8 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
     '2_month_promo': {
       'name': 'Paket 2 Bulan (Paling Laris 🔥)',
       'price': 15000,
-      'desc': 'Hemat Rp5.000 + Bonus Produk Unggulan/Disponsori di urutan teratas!',
+      'desc':
+          'Hemat Rp5.000 + Bonus Produk Unggulan/Disponsori di urutan teratas!',
     },
   };
 
@@ -61,7 +64,10 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
   // Kirim Pengajuan Iklan ke Backend
   Future<void> _submitAd() async {
     if (_titleController.text.isEmpty || _selectedImageBytes == null) {
-      _showMessage('Harap isi Judul Usaha dan pilih Banner Iklan!', isError: true);
+      _showMessage(
+        'Harap isi Judul Usaha dan pilih Banner Iklan!',
+        isError: true,
+      );
       return;
     }
 
@@ -101,7 +107,10 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pasang Iklan / Sponsor', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Pasang Iklan / Sponsor',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color.fromARGB(255, 27, 177, 164),
       ),
       body: SingleChildScrollView(
@@ -145,15 +154,22 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                 const SizedBox(height: 20),
 
                 // Pilihan Paket Durasi
-                const Text('Pilih Paket Durasi Iklan:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Pilih Paket Durasi Iklan:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _selectedPackage,
-                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
                   items: _packages.keys.map((String key) {
                     return DropdownMenuItem<String>(
                       value: key,
-                      child: Text('${_packages[key]!['name']} (Rp ${_packages[key]!['price']})'),
+                      child: Text(
+                        '${_packages[key]!['name']} (Rp ${_packages[key]!['price']})',
+                      ),
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
@@ -170,13 +186,19 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                   ),
                   child: Text(
                     'Info Paket: ${currentPackageInfo['desc']}',
-                    style: TextStyle(color: Colors.teal.shade800, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      color: Colors.teal.shade800,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
 
                 // Pilihan Metode Pembayaran
-                const Text('Metode Pembayaran:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Metode Pembayaran:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -186,7 +208,8 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                         subtitle: const Text('Bayar langsung ke kasir'),
                         value: 'cash_koperasi',
                         groupValue: _selectedPaymentMethod,
-                        onChanged: (val) => setState(() => _selectedPaymentMethod = val!),
+                        onChanged: (val) =>
+                            setState(() => _selectedPaymentMethod = val!),
                       ),
                     ),
                     Expanded(
@@ -195,7 +218,8 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                         subtitle: const Text('Transfer / DANA'),
                         value: 'digital_wallet',
                         groupValue: _selectedPaymentMethod,
-                        onChanged: (val) => setState(() => _selectedPaymentMethod = val!),
+                        onChanged: (val) =>
+                            setState(() => _selectedPaymentMethod = val!),
                       ),
                     ),
                   ],
@@ -203,7 +227,10 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                 const SizedBox(height: 20),
 
                 // Pilih Gambar Banner Iklan
-                const Text('Banner Iklan (Foto/Poster):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Banner Iklan (Foto/Poster):',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -217,7 +244,9 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                       child: Text(
                         _selectedImageName ?? 'Belum ada banner dipilih',
                         style: TextStyle(
-                          color: _selectedImageName == null ? Colors.red : Colors.green,
+                          color: _selectedImageName == null
+                              ? Colors.red
+                              : Colors.green,
                           fontWeight: FontWeight.bold,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -241,7 +270,10 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
                             'Ajukan Iklan (Total: Rp ${currentPackageInfo['price']})',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                   ),
                 ),

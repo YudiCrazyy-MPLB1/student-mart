@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'cart_controller.dart';
 import 'checkout_page.dart';
 
@@ -14,12 +16,12 @@ class _CartPageState extends State<CartPage> {
   void initState() {
     super.initState();
 
-    cartController.addListener(_cartUpdated);
+    context.read<CartController>().addListener(_cartUpdated);
   }
 
   @override
   void dispose() {
-    cartController.removeListener(_cartUpdated);
+    context.read<CartController>().removeListener(_cartUpdated);
     super.dispose();
   }
 
@@ -28,23 +30,18 @@ class _CartPageState extends State<CartPage> {
   }
 
   String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]}.',
-    )}';
+    return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = cartController.items;
+    final items = context.read<CartController>().items;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Keranjang',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
 
@@ -61,10 +58,7 @@ class _CartPageState extends State<CartPage> {
                   SizedBox(height: 16),
                   Text(
                     'Keranjang masih kosong',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -79,12 +73,10 @@ class _CartPageState extends State<CartPage> {
                       final item = items[index];
                       final product = item.product;
 
-                      final subtotal =
-                          product.price * item.quantity;
+                      final subtotal = product.price * item.quantity;
 
                       return Card(
-                        margin:
-                            const EdgeInsets.only(bottom: 12),
+                        margin: const EdgeInsets.only(bottom: 12),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Row(
@@ -94,8 +86,7 @@ class _CartPageState extends State<CartPage> {
                                 height: 65,
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade100,
-                                  borderRadius:
-                                      BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
                                   Icons.shopping_bag,
@@ -108,25 +99,19 @@ class _CartPageState extends State<CartPage> {
 
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       product.name,
                                       style: const TextStyle(
                                         fontSize: 16,
-                                        fontWeight:
-                                            FontWeight.bold,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
 
                                     const SizedBox(height: 4),
 
-                                    Text(
-                                      formatRupiah(
-                                        product.price,
-                                      ),
-                                    ),
+                                    Text(formatRupiah(product.price)),
 
                                     const SizedBox(height: 10),
 
@@ -134,14 +119,11 @@ class _CartPageState extends State<CartPage> {
                                       children: [
                                         IconButton(
                                           onPressed: () {
-                                            cartController
-                                                .decreaseQuantity(
-                                              product,
-                                            );
+                                            context
+                                                .read<CartController>()
+                                                .decreaseQuantity(product);
                                           },
-                                          icon: const Icon(
-                                            Icons.remove,
-                                          ),
+                                          icon: const Icon(Icons.remove),
                                           style: IconButton.styleFrom(
                                             backgroundColor:
                                                 Colors.grey.shade200,
@@ -149,17 +131,13 @@ class _CartPageState extends State<CartPage> {
                                         ),
 
                                         Padding(
-                                          padding:
-                                              const EdgeInsets
-                                                  .symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                             horizontal: 12,
                                           ),
                                           child: Text(
                                             '${item.quantity}',
-                                            style:
-                                                const TextStyle(
-                                              fontWeight:
-                                                  FontWeight.bold,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
                                           ),
@@ -167,14 +145,11 @@ class _CartPageState extends State<CartPage> {
 
                                         IconButton(
                                           onPressed: () {
-                                            cartController
-                                                .addToCart(
-                                              product,
-                                            );
+                                            context
+                                                .read<CartController>()
+                                                .addToCart(product);
                                           },
-                                          icon: const Icon(
-                                            Icons.add,
-                                          ),
+                                          icon: const Icon(Icons.add),
                                           style: IconButton.styleFrom(
                                             backgroundColor:
                                                 Colors.grey.shade200,
@@ -187,15 +162,13 @@ class _CartPageState extends State<CartPage> {
                               ),
 
                               Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   IconButton(
                                     onPressed: () {
-                                      cartController
-                                          .removeFromCart(
-                                        product,
-                                      );
+                                      context
+                                          .read<CartController>()
+                                          .removeFromCart(product);
                                     },
                                     icon: const Icon(
                                       Icons.delete_outline,
@@ -208,8 +181,7 @@ class _CartPageState extends State<CartPage> {
                                   Text(
                                     formatRupiah(subtotal),
                                     style: const TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
@@ -230,16 +202,14 @@ class _CartPageState extends State<CartPage> {
                     boxShadow: [
                       BoxShadow(
                         blurRadius: 10,
-                        color: Colors.black
-                            .withValues(alpha: 0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                       ),
                     ],
                   ),
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
                             'Total',
@@ -249,9 +219,7 @@ class _CartPageState extends State<CartPage> {
                             ),
                           ),
                           Text(
-                            formatRupiah(
-                              cartController.total,
-                            ),
+                            formatRupiah(context.read<CartController>().total),
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -267,13 +235,13 @@ class _CartPageState extends State<CartPage> {
                         height: 52,
                         child: ElevatedButton(
                           onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const CheckoutPage(),
-    ),
-  );
-},
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CheckoutPage(),
+                              ),
+                            );
+                          },
                           child: const Text(
                             'Checkout',
                             style: TextStyle(

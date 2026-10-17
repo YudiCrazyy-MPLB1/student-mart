@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'dart:typed_data';
 
 import 'api_service.dart';
@@ -13,7 +14,8 @@ class SupplierDashboardPage extends StatefulWidget {
   State<SupplierDashboardPage> createState() => _SupplierDashboardPageState();
 }
 
-class _SupplierDashboardPageState extends State<SupplierDashboardPage> with SingleTickerProviderStateMixin {
+class _SupplierDashboardPageState extends State<SupplierDashboardPage>
+    with SingleTickerProviderStateMixin {
   bool _isSupplier = false;
   bool _isLoading = true;
 
@@ -56,9 +58,12 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
     try {
       final user = await ApiService.getMe();
       final supplierStatus = user['is_supplier'];
-      
+
       setState(() {
-        _isSupplier = (supplierStatus == 1 || supplierStatus == true || supplierStatus == '1');
+        _isSupplier =
+            (supplierStatus == 1 ||
+            supplierStatus == true ||
+            supplierStatus == '1');
       });
 
       if (_isSupplier) {
@@ -75,7 +80,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
   Future<void> _fetchMyConsignmentProducts() async {
     setState(() => _isLoadingProducts = true);
     try {
-      // Pastikan method getMyConsignmentProducts tersedia di ApiService Anda, 
+      // Pastikan method getMyConsignmentProducts tersedia di ApiService Anda,
       // atau gunakan endpoint yang sesuai untuk mengambil produk milik supplier yang sedang login.
       final products = await ApiService.getMyConsignmentProducts(); // Sesuaikan jika ada endpoint khusus produk saya
       setState(() {
@@ -102,8 +107,8 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
       if (!_isSupplier) {
         setState(() => _isLoading = true);
         try {
-          await ApiService.agreeTos(); 
-          await _loadUserData(); 
+          await ApiService.agreeTos();
+          await _loadUserData();
           _showMessage('Berhasil! Anda sekarang adalah pemasok Student Mart.');
         } catch (e) {
           _showMessage(e.toString(), isError: true);
@@ -145,7 +150,10 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
         _priceController.text.isEmpty ||
         _stockController.text.isEmpty ||
         _selectedImageBytes == null) {
-      _showMessage('Harap lengkapi semua form dan pilih gambar!', isError: true);
+      _showMessage(
+        'Harap lengkapi semua form dan pilih gambar!',
+        isError: true,
+      );
       return;
     }
 
@@ -162,7 +170,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
       );
 
       _showMessage('Produk berhasil diajukan! Menunggu verifikasi Admin.');
-      
+
       _nameController.clear();
       _descController.clear();
       _priceController.clear();
@@ -175,7 +183,6 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
       // Refresh daftar produk & pindah ke tab status
       _fetchMyConsignmentProducts();
       _tabController.animateTo(1);
-
     } catch (e) {
       _showMessage(e.toString(), isError: true);
     } finally {
@@ -197,7 +204,10 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Dashboard Pemasok', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Dashboard Pemasok',
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: const Color.fromARGB(255, 27, 177, 164),
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -207,7 +217,10 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
     if (!_isSupplier) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Dashboard Pemasok', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Dashboard Pemasok',
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: const Color.fromARGB(255, 27, 177, 164),
           actions: [
             IconButton(
@@ -223,7 +236,10 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard Pemasok', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Dashboard Pemasok',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color.fromARGB(255, 27, 177, 164),
         actions: [
           IconButton(
@@ -245,10 +261,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildUploadForm(),
-          _buildStatusTab(),
-        ],
+        children: [_buildUploadForm(), _buildStatusTab()],
       ),
     );
   }
@@ -280,7 +293,10 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
               icon: const Icon(Icons.handshake),
               label: const Text('Baca Ketentuan & Daftar Pemasok'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
                 backgroundColor: const Color.fromARGB(255, 27, 177, 164),
                 foregroundColor: Colors.white,
               ),
@@ -311,16 +327,22 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 24),
-              
+
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nama Barang', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Nama Barang',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _descController,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Deskripsi Singkat', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Deskripsi Singkat',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -329,7 +351,10 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
                     child: TextField(
                       controller: _priceController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Harga Jual (Rp)', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Harga Jual (Rp)',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -337,13 +362,16 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
                     child: TextField(
                       controller: _stockController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Stok Awal', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Stok Awal',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               Row(
                 children: [
                   ElevatedButton.icon(
@@ -356,17 +384,19 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
                     child: Text(
                       _selectedImageName ?? 'Belum ada gambar terpilih',
                       style: TextStyle(
-                        color: _selectedImageName == null ? Colors.red : Colors.green,
+                        color: _selectedImageName == null
+                            ? Colors.red
+                            : Colors.green,
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                  )
+                  ),
                 ],
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -376,9 +406,12 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
                     backgroundColor: const Color.fromARGB(255, 27, 177, 164),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Ajukan Barang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Ajukan Barang',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -388,8 +421,12 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
 
   // TAB 2: STATISTIK & STATUS PRODUK SAYA
   Widget _buildStatusTab() {
-    int approvedCount = _myProducts.where((p) => p['status'] == 'approved').length;
-    int pendingCount = _myProducts.where((p) => p['status'] == 'pending' || p['status'] == null).length;
+    int approvedCount = _myProducts
+        .where((p) => p['status'] == 'approved')
+        .length;
+    int pendingCount = _myProducts
+        .where((p) => p['status'] == 'pending' || p['status'] == null)
+        .length;
     int totalItems = _myProducts.length;
 
     return RefreshIndicator(
@@ -405,11 +442,32 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildStatCard('Disetujui', '$approvedCount', Colors.green, Icons.check_circle)),
+              Expanded(
+                child: _buildStatCard(
+                  'Disetujui',
+                  '$approvedCount',
+                  Colors.green,
+                  Icons.check_circle,
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _buildStatCard('Pending', '$pendingCount', Colors.orange, Icons.hourglass_top)),
+              Expanded(
+                child: _buildStatCard(
+                  'Pending',
+                  '$pendingCount',
+                  Colors.orange,
+                  Icons.hourglass_top,
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _buildStatCard('Total Produk', '$totalItems', Colors.teal, Icons.inventory)),
+              Expanded(
+                child: _buildStatCard(
+                  'Total Produk',
+                  '$totalItems',
+                  Colors.teal,
+                  Icons.inventory,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -422,107 +480,141 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
           const SizedBox(height: 12),
 
           _isLoadingProducts
-              ? const Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()))
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(30),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
               : _myProducts.isEmpty
-                  ? Center(
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40.0),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.inbox, size: 60, color: Colors.grey),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Belum ada barang titipan yang diajukan.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () => _tabController.animateTo(0),
+                          child: const Text('Upload Sekarang'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _myProducts.length,
+                  itemBuilder: (context, index) {
+                    final p = _myProducts[index];
+                    final status = p['status'] ?? 'pending';
+
+                    Color badgeColor = Colors.orange;
+                    String badgeText = 'Menunggu Review';
+                    if (status == 'approved') {
+                      badgeColor = Colors.green;
+                      badgeText = 'Disetujui (Aktif)';
+                    } else if (status == 'rejected') {
+                      badgeColor = Colors.red;
+                      badgeText = 'Ditolak';
+                    }
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
                       child: Padding(
-                        padding: const EdgeInsets.all(40.0),
-                        child: Column(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
                           children: [
-                            const Icon(Icons.inbox, size: 60, color: Colors.grey),
-                            const SizedBox(height: 12),
-                            const Text('Belum ada barang titipan yang diajukan.', style: TextStyle(color: Colors.grey)),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: () => _tabController.animateTo(0),
-                              child: const Text('Upload Sekarang'),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: p['image'] != null
+                                  ? Image.network(
+                                      ApiService.getImageUrl(p['image']),
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.broken_image,
+                                        size: 60,
+                                        color: Colors.grey,
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 60,
+                                      height: 60,
+                                      color: Colors.grey.shade200,
+                                      child: const Icon(
+                                        Icons.store,
+                                        color: Colors.teal,
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p['name'] ?? 'Tanpa Nama',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Harga: Rp${p['price']} | Stok: ${p['stock']}',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: badgeColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: badgeColor),
+                                    ),
+                                    child: Text(
+                                      badgeText,
+                                      style: TextStyle(
+                                        color: badgeColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _myProducts.length,
-                      itemBuilder: (context, index) {
-                        final p = _myProducts[index];
-                        final status = p['status'] ?? 'pending';
-
-                        Color badgeColor = Colors.orange;
-                        String badgeText = 'Menunggu Review';
-                        if (status == 'approved') {
-                          badgeColor = Colors.green;
-                          badgeText = 'Disetujui (Aktif)';
-                        } else if (status == 'rejected') {
-                          badgeColor = Colors.red;
-                          badgeText = 'Ditolak';
-                        }
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: p['image'] != null
-                                      ? Image.network(
-                                          ApiService.getImageUrl(p['image']),
-                                          width: 60,
-                                          height: 60,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 60, color: Colors.grey),
-                                        )
-                                      : Container(
-                                          width: 60,
-                                          height: 60,
-                                          color: Colors.grey.shade200,
-                                          child: const Icon(Icons.store, color: Colors.teal),
-                                        ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        p['name'] ?? 'Tanpa Nama',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text('Harga: Rp${p['price']} | Stok: ${p['stock']}'),
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: badgeColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: badgeColor),
-                                        ),
-                                        child: Text(
-                                          badgeText,
-                                          style: TextStyle(color: badgeColor, fontSize: 12, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    );
+                  },
+                ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, Color color, IconData icon) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -543,7 +635,11 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage> with Sing
           const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
           const SizedBox(height: 4),
           Text(

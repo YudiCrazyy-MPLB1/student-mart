@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'api_service.dart';
 
 class OrderPage extends StatefulWidget {
@@ -39,9 +40,7 @@ class _OrderPageState extends State<OrderPage> {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = e
-            .toString()
-            .replaceFirst('Exception: ', '');
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
         isLoading = false;
       });
     }
@@ -55,8 +54,7 @@ class _OrderPageState extends State<OrderPage> {
     final buffer = StringBuffer();
 
     for (int i = 0; i < text.length; i++) {
-      if (i > 0 &&
-          (text.length - i) % 3 == 0) {
+      if (i > 0 && (text.length - i) % 3 == 0) {
         buffer.write('.');
       }
 
@@ -103,9 +101,7 @@ class _OrderPageState extends State<OrderPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pesanan Saya'),
-      ),
+      appBar: AppBar(title: const Text('Pesanan Saya')),
 
       body: _buildBody(),
     );
@@ -113,9 +109,7 @@ class _OrderPageState extends State<OrderPage> {
 
   Widget _buildBody() {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (errorMessage != null) {
@@ -123,22 +117,14 @@ class _OrderPageState extends State<OrderPage> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
 
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 60,
-                color: Colors.red,
-              ),
+              const Icon(Icons.error_outline, size: 60, color: Colors.red),
 
               const SizedBox(height: 16),
 
-              Text(
-                errorMessage!,
-                textAlign: TextAlign.center,
-              ),
+              Text(errorMessage!, textAlign: TextAlign.center),
 
               const SizedBox(height: 16),
 
@@ -157,27 +143,19 @@ class _OrderPageState extends State<OrderPage> {
         onRefresh: _loadOrders,
 
         child: ListView(
-          physics:
-              const AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
 
           children: const [
             SizedBox(height: 180),
 
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 80,
-              color: Colors.grey,
-            ),
+            Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey),
 
             SizedBox(height: 20),
 
             Center(
               child: Text(
                 'Belum ada pesanan.',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
 
@@ -186,9 +164,7 @@ class _OrderPageState extends State<OrderPage> {
             Center(
               child: Text(
                 'Pesanan kamu akan muncul di sini.',
-                style: TextStyle(
-                  color: Colors.grey,
-                ),
+                style: TextStyle(color: Colors.grey),
               ),
             ),
           ],
@@ -213,46 +189,31 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-  Widget _buildOrderCard(
-    Map<String, dynamic> order,
-  ) {
-    final String orderNumber =
-        order['order_number'] ?? '-';
+  Widget _buildOrderCard(Map<String, dynamic> order) {
+    final String orderNumber = order['order_number'] ?? '-';
 
-    final String status =
-        order['status'] ?? '-';
+    final String status = order['status'] ?? '-';
 
-    final String pickupMethod =
-        order['pickup_method'] ?? '-';
+    final String pickupMethod = order['pickup_method'] ?? '-';
 
-    final String paymentMethod =
-        order['payment_method'] ?? '-';
+    final String paymentMethod = order['payment_method'] ?? '-';
 
-    final int total =
-        int.tryParse(
-          order['total'].toString(),
-        ) ??
-        0;
+    final int total = int.tryParse(order['total'].toString()) ?? 0;
 
-    final List<dynamic> items =
-        order['items'] ?? [];
+    final List<dynamic> items = order['items'] ?? [];
 
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 16,
-      ),
+      margin: const EdgeInsets.only(bottom: 16),
 
       child: Padding(
         padding: const EdgeInsets.all(16),
 
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
 
           children: [
             Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
               children: [
                 Expanded(
@@ -272,11 +233,9 @@ class _OrderPageState extends State<OrderPage> {
                   ),
 
                   decoration: BoxDecoration(
-                    color: statusColor(status)
-                        .withValues(alpha: 0.12),
+                    color: statusColor(status).withValues(alpha: 0.12),
 
-                    borderRadius:
-                        BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20),
                   ),
 
                   child: Text(
@@ -293,68 +252,42 @@ class _OrderPageState extends State<OrderPage> {
 
             const Divider(height: 24),
 
-            ...items.map(
-              (item) {
-                final product =
-                    item['product'] ?? {};
+            ...items.map((item) {
+              final product = item['product'] ?? {};
 
-                final String name =
-                    product['name'] ?? 'Produk';
+              final String name = product['name'] ?? 'Produk';
 
-                final int quantity =
-                    int.tryParse(
-                      item['quantity']
-                          .toString(),
-                    ) ??
-                    0;
+              final int quantity =
+                  int.tryParse(item['quantity'].toString()) ?? 0;
 
-                final int subtotal =
-                    int.tryParse(
-                      item['subtotal']
-                          .toString(),
-                    ) ??
-                    0;
+              final int subtotal =
+                  int.tryParse(item['subtotal'].toString()) ?? 0;
 
-                return Padding(
-                  padding:
-                      const EdgeInsets.only(
-                    bottom: 10,
-                  ),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
 
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '$name x$quantity',
-                        ),
-                      ),
+                child: Row(
+                  children: [
+                    Expanded(child: Text('$name x$quantity')),
 
-                      Text(
-                        formatRupiah(subtotal),
-                        style:
-                            const TextStyle(
-                          fontWeight:
-                              FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    Text(
+                      formatRupiah(subtotal),
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              );
+            }),
 
             const Divider(height: 20),
 
             Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
               children: [
                 const Text(
                   'Total',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
 
                 Text(
@@ -371,18 +304,11 @@ class _OrderPageState extends State<OrderPage> {
 
             Row(
               children: [
-                const Icon(
-                  Icons.shopping_bag_outlined,
-                  size: 18,
-                ),
+                const Icon(Icons.shopping_bag_outlined, size: 18),
 
                 const SizedBox(width: 8),
 
-                Expanded(
-                  child: Text(
-                    pickupMethod,
-                  ),
-                ),
+                Expanded(child: Text(pickupMethod)),
               ],
             ),
 
@@ -390,18 +316,11 @@ class _OrderPageState extends State<OrderPage> {
 
             Row(
               children: [
-                const Icon(
-                  Icons.payment_outlined,
-                  size: 18,
-                ),
+                const Icon(Icons.payment_outlined, size: 18),
 
                 const SizedBox(width: 8),
 
-                Expanded(
-                  child: Text(
-                    paymentMethod,
-                  ),
-                ),
+                Expanded(child: Text(paymentMethod)),
               ],
             ),
           ],

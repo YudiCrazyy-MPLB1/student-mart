@@ -43,62 +43,49 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
         isLoading = false;
       });
 
-      showMessage(
-        'Gagal mengambil pesanan: $e',
-        isError: true,
-      );
+      showMessage('Gagal mengambil pesanan: $e', isError: true);
     }
   }
 
   Future<void> updateOrderStatus(
-  Map<String, dynamic> order,
-  String newStatus,
-) async {
-  final orderId = int.tryParse(
-    order['id'].toString(),
-  );
+    Map<String, dynamic> order,
+    String newStatus,
+  ) async {
+    final orderId = int.tryParse(order['id'].toString());
 
-  if (orderId == null) {
-    showMessage(
-      'ID pesanan tidak valid.',
-      isError: true,
-    );
-    return;
+    if (orderId == null) {
+      showMessage('ID pesanan tidak valid.', isError: true);
+      return;
+    }
+
+    try {
+      await ApiService.updateManagerOrderStatus(
+        orderId: orderId,
+        status: newStatus,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pop(context);
+
+      showMessage(
+        'Status pesanan berhasil diubah menjadi '
+        '${formatStatus(newStatus)}.',
+      );
+
+      await loadOrders();
+    } catch (e) {
+      if (!mounted) return;
+
+      showMessage('Gagal mengubah status: $e', isError: true);
+    }
   }
-
-  try {
-    await ApiService.updateManagerOrderStatus(
-      orderId: orderId,
-      status: newStatus,
-    );
-
-    if (!mounted) return;
-
-    Navigator.pop(context);
-
-    showMessage(
-      'Status pesanan berhasil diubah menjadi '
-      '${formatStatus(newStatus)}.',
-    );
-
-    await loadOrders();
-  } catch (e) {
-    if (!mounted) return;
-
-    showMessage(
-      'Gagal mengubah status: $e',
-      isError: true,
-    );
-  }
-}
 
   List<Map<String, dynamic>> get filteredOrders {
     return orders.where((order) {
-      final status =
-          order['status']?.toString().toLowerCase() ?? '';
+      final status = order['status']?.toString().toLowerCase() ?? '';
 
-      final orderNumber =
-          order['order_number']?.toString().toLowerCase() ?? '';
+      final orderNumber = order['order_number']?.toString().toLowerCase() ?? '';
 
       final user = order['user'];
 
@@ -111,9 +98,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
           orderNumber.contains(searchQuery.toLowerCase()) ||
           userName.contains(searchQuery.toLowerCase());
 
-      final matchesStatus =
-          selectedStatus == 'all' ||
-          status == selectedStatus;
+      final matchesStatus = selectedStatus == 'all' || status == selectedStatus;
 
       return matchesSearch && matchesStatus;
     }).toList();
@@ -122,10 +107,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
   String formatPrice(dynamic value) {
     final price = int.tryParse(value.toString()) ?? 0;
 
-    return 'Rp ${price.toString().replaceAllMapped(
-          RegExp(r'\B(?=(\d{3})+(?!\d))'),
-          (match) => '.',
-        )}';
+    return 'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}';
   }
 
   String formatStatus(String status) {
@@ -170,10 +152,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
     }
   }
 
-  void showMessage(
-    String message, {
-    bool isError = false,
-  }) {
+  void showMessage(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -182,81 +161,65 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
     );
   }
 
-  void showStatusMenu(
-  Map<String, dynamic> order,
-) {
-  final currentStatus =
-      order['status']?.toString().toLowerCase() ?? '';
+  void showStatusMenu(Map<String, dynamic> order) {
+    final currentStatus = order['status']?.toString().toLowerCase() ?? '';
 
-  showModalBottomSheet(
-    context: context,
-    showDragHandle: true,
-    builder: (context) {
-      return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Ubah Status Pesanan',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Ubah Status Pesanan',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              _statusOption(
-                order,
-                'pending',
-                Icons.hourglass_empty,
-                currentStatus,
-              ),
+                _statusOption(
+                  order,
+                  'pending',
+                  Icons.hourglass_empty,
+                  currentStatus,
+                ),
 
-              _statusOption(
-                order,
-                'processing',
-                Icons.inventory_2,
-                currentStatus,
-              ),
+                _statusOption(
+                  order,
+                  'processing',
+                  Icons.inventory_2,
+                  currentStatus,
+                ),
 
-              _statusOption(
-                order,
-                'completed',
-                Icons.check_circle,
-                currentStatus,
-              ),
+                _statusOption(
+                  order,
+                  'completed',
+                  Icons.check_circle,
+                  currentStatus,
+                ),
 
-              _statusOption(
-                order,
-                'cancelled',
-                Icons.cancel,
-                currentStatus,
-              ),
-            ],
+                _statusOption(order, 'cancelled', Icons.cancel, currentStatus),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
-  void showOrderDetail(
-    Map<String, dynamic> order,
-  ) {
+  void showOrderDetail(Map<String, dynamic> order) {
     final user = order['user'];
 
     final customerName = user is Map
         ? user['name']?.toString() ?? 'Tidak diketahui'
         : 'Tidak diketahui';
 
-    final customerEmail = user is Map
-        ? user['email']?.toString() ?? '-'
-        : '-';
+    final customerEmail = user is Map ? user['email']?.toString() ?? '-' : '-';
 
     final items = order['items'];
 
@@ -273,8 +236,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    order['order_number']?.toString() ??
-                        'Pesanan',
+                    order['order_number']?.toString() ?? 'Pesanan',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -290,10 +252,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
 
                   const Text(
                     'Produk',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 8),
@@ -303,59 +262,48 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
                       final product = item['product'];
 
                       final productName = product is Map
-                          ? product['name']?.toString() ??
-                              'Produk'
+                          ? product['name']?.toString() ?? 'Produk'
                           : 'Produk';
 
-                      final quantity =
-                          item['quantity'] ?? 0;
+                      final quantity = item['quantity'] ?? 0;
 
                       final price = item['price'] ?? 0;
 
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(productName),
-                        subtitle: Text(
-                          '$quantity x ${formatPrice(price)}',
-                        ),
+                        subtitle: Text('$quantity x ${formatPrice(price)}'),
                       );
                     })
                   else
-                    const Text(
-                      'Tidak ada detail produk.',
-                    ),
+                    const Text('Tidak ada detail produk.'),
 
                   const Divider(),
 
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         'Total',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
                         formatPrice(order['total']),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
 
                   SizedBox(
-  width: double.infinity,
-  child: OutlinedButton.icon(
-    onPressed: () {
-      showStatusMenu(order);
-    },
-    icon: const Icon(Icons.sync),
-    label: const Text('Ubah Status'),
-  ),
-),
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        showStatusMenu(order);
+                      },
+                      icon: const Icon(Icons.sync),
+                      label: const Text('Ubah Status'),
+                    ),
+                  ),
 
                   const SizedBox(height: 8),
 
@@ -381,10 +329,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
     final color = statusColor(status);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
@@ -419,12 +364,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              8,
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Cari nomor pesanan / pelanggan...',
@@ -453,9 +393,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
             height: 55,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
                 _statusFilter('all', 'Semua'),
                 _statusFilter('pending', 'Menunggu'),
@@ -468,301 +406,258 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
 
           Expanded(
             child: isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
+                ? const Center(child: CircularProgressIndicator())
                 : visibleOrders.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Tidak ada pesanan.',
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: loadOrders,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(
-                            16,
-                            8,
-                            16,
-                            20,
-                          ),
-                          itemCount: visibleOrders.length,
-                          itemBuilder: (context, index) {
-                            final order =
-                                visibleOrders[index];
+                ? const Center(child: Text('Tidak ada pesanan.'))
+                : RefreshIndicator(
+                    onRefresh: loadOrders,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                      itemCount: visibleOrders.length,
+                      itemBuilder: (context, index) {
+                        final order = visibleOrders[index];
 
-                            final user = order['user'];
+                        final user = order['user'];
 
-                            final customerName = user is Map
-                                ? user['name']?.toString() ??
-                                    'Tidak diketahui'
-                                : 'Tidak diketahui';
+                        final customerName = user is Map
+                            ? user['name']?.toString() ?? 'Tidak diketahui'
+                            : 'Tidak diketahui';
 
-                            final status =
-                                order['status']
-                                        ?.toString() ??
-                                    'unknown';
+                        final status = order['status']?.toString() ?? 'unknown';
 
-                            return Card(
-  margin: const EdgeInsets.only(
-    bottom: 12,
-  ),
-  child: Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // HEADER ORDER
-        Row(
-          children: [
-            const Icon(
-              Icons.receipt_long,
-            ),
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // HEADER ORDER
+                                Row(
+                                  children: [
+                                    const Icon(Icons.receipt_long),
 
-            const SizedBox(width: 8),
+                                    const SizedBox(width: 8),
 
-            Expanded(
-              child: Text(
-                order['order_number']?.toString() ??
-                    'Pesanan',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-            ),
+                                    Expanded(
+                                      child: Text(
+                                        order['order_number']?.toString() ??
+                                            'Pesanan',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ),
 
-            statusChip(status),
-          ],
-        ),
+                                    statusChip(status),
+                                  ],
+                                ),
 
-        const SizedBox(height: 12),
+                                const SizedBox(height: 12),
 
-        // CUSTOMER
-        Text(
-          customerName,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
-        ),
+                                // CUSTOMER
+                                Text(
+                                  customerName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                  ),
+                                ),
 
-        const SizedBox(height: 12),
+                                const SizedBox(height: 12),
 
-        // DAFTAR PRODUK
-        const Text(
-          'Produk',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
+                                // DAFTAR PRODUK
+                                const Text(
+                                  'Produk',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
 
-        const SizedBox(height: 6),
+                                const SizedBox(height: 6),
 
-        if (order['items'] is List &&
-            (order['items'] as List).isNotEmpty)
-          ...(order['items'] as List).map(
-            (item) {
-              final product = item['product'];
+                                if (order['items'] is List &&
+                                    (order['items'] as List).isNotEmpty)
+                                  ...(order['items'] as List).map((item) {
+                                    final product = item['product'];
 
-              final productName = product is Map
-                  ? product['name']?.toString() ??
-                      'Produk'
-                  : 'Produk';
+                                    final productName = product is Map
+                                        ? product['name']?.toString() ??
+                                              'Produk'
+                                        : 'Produk';
 
-              final quantity =
-                  int.tryParse(
-                        item['quantity']?.toString() ??
-                            '0',
-                      ) ??
-                      0;
+                                    final quantity =
+                                        int.tryParse(
+                                          item['quantity']?.toString() ?? '0',
+                                        ) ??
+                                        0;
 
-              final price =
-                  int.tryParse(
-                        item['price']?.toString() ??
-                            '0',
-                      ) ??
-                      0;
+                                    final price =
+                                        int.tryParse(
+                                          item['price']?.toString() ?? '0',
+                                        ) ??
+                                        0;
 
-              final subtotal =
-                  quantity * price;
+                                    final subtotal = quantity * price;
 
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(
-                  vertical: 5,
-                ),
-                child: Row(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 18,
-                    ),
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 5,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Icon(
+                                            Icons.shopping_bag_outlined,
+                                            size: 18,
+                                          ),
 
-                    const SizedBox(width: 8),
+                                          const SizedBox(width: 8),
 
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            productName,
-                            style:
-                                const TextStyle(
-                              fontWeight:
-                                  FontWeight.w500,
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  productName,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+
+                                                const SizedBox(height: 2),
+
+                                                Text(
+                                                  '$quantity × ${formatPrice(price)}',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+
+                                          Text(
+                                            formatPrice(subtotal),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  })
+                                else
+                                  const Text(
+                                    'Tidak ada produk.',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+
+                                const SizedBox(height: 8),
+
+                                const Divider(),
+
+                                const SizedBox(height: 4),
+
+                                // TOTAL
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Total',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+
+                                    Text(
+                                      formatPrice(order['total']),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                // PICKUP
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 18,
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    Expanded(
+                                      child: Text(
+                                        order['pickup_method']?.toString() ??
+                                            '-',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 6),
+
+                                // PAYMENT
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.payment_outlined,
+                                      size: 18,
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    Expanded(
+                                      child: Text(
+                                        order['payment_method']?.toString() ??
+                                            '-',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // BUTTON UBAH STATUS
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      showStatusMenu(order);
+                                    },
+                                    icon: const Icon(Icons.sync),
+                                    label: const Text('Ubah Status'),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-
-                          const SizedBox(height: 2),
-
-                          Text(
-                            '$quantity × ${formatPrice(price)}',
-                            style: TextStyle(
-                              color: Colors
-                                  .grey
-                                  .shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-
-                    Text(
-                      formatPrice(subtotal),
-                      style:
-                          const TextStyle(
-                        fontWeight:
-                            FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          )
-        else
-          const Text(
-            'Tidak ada produk.',
-            style: TextStyle(
-              color: Colors.grey,
-            ),
-          ),
-
-        const SizedBox(height: 8),
-
-        const Divider(),
-
-        const SizedBox(height: 4),
-
-        // TOTAL
-        Row(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Total',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-
-            Text(
-              formatPrice(order['total']),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 8),
-
-        // PICKUP
-        Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.location_on_outlined,
-              size: 18,
-            ),
-
-            const SizedBox(width: 8),
-
-            Expanded(
-              child: Text(
-                order['pickup_method']?.toString() ??
-                    '-',
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 6),
-
-        // PAYMENT
-        Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.payment_outlined,
-              size: 18,
-            ),
-
-            const SizedBox(width: 8),
-
-            Expanded(
-              child: Text(
-                order['payment_method']?.toString() ??
-                    '-',
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-
-        // BUTTON UBAH STATUS
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              showStatusMenu(order);
-            },
-            icon: const Icon(
-              Icons.sync,
-            ),
-            label: const Text(
-              'Ubah Status',
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
-);
-                          },
-                        ),
-                      ),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _statusFilter(
-    String value,
-    String label,
-  ) {
+  Widget _statusFilter(String value, String label) {
     final selected = selectedStatus == value;
 
     return Padding(
@@ -780,35 +675,25 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
   }
 
   Widget _statusOption(
-  Map<String, dynamic> order,
-  String status,
-  IconData icon,
-  String currentStatus,
-) {
-  final isCurrent = currentStatus == status;
+    Map<String, dynamic> order,
+    String status,
+    IconData icon,
+    String currentStatus,
+  ) {
+    final isCurrent = currentStatus == status;
 
-  return ListTile(
-    leading: Icon(
-      icon,
-      color: statusColor(status),
-    ),
-    title: Text(
-      formatStatus(status),
-    ),
-    trailing: isCurrent
-        ? const Icon(Icons.check)
-        : null,
-    enabled: !isCurrent,
-    onTap: isCurrent
-        ? null
-        : () async {
-            Navigator.pop(context);
+    return ListTile(
+      leading: Icon(icon, color: statusColor(status)),
+      title: Text(formatStatus(status)),
+      trailing: isCurrent ? const Icon(Icons.check) : null,
+      enabled: !isCurrent,
+      onTap: isCurrent
+          ? null
+          : () async {
+              Navigator.pop(context);
 
-            await updateOrderStatus(
-              order,
-              status,
-            );
-          },
-  );
-}
+              await updateOrderStatus(order, status);
+            },
+    );
+  }
 }

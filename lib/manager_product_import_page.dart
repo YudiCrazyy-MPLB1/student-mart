@@ -13,8 +13,7 @@ class ManagerProductImportPage extends StatefulWidget {
       _ManagerProductImportPageState();
 }
 
-class _ManagerProductImportPageState
-    extends State<ManagerProductImportPage> {
+class _ManagerProductImportPageState extends State<ManagerProductImportPage> {
   bool isLoading = false;
 
   String? selectedFileName;
@@ -29,16 +28,10 @@ class _ManagerProductImportPageState
     try {
       const typeGroup = XTypeGroup(
         label: 'Excel',
-        extensions: [
-          'xlsx',
-          'xls',
-          'csv',
-        ],
+        extensions: ['xlsx', 'xls', 'csv'],
       );
 
-      final XFile? file = await openFile(
-        acceptedTypeGroups: [typeGroup],
-      );
+      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
 
       if (file == null) {
         return;
@@ -47,9 +40,7 @@ class _ManagerProductImportPageState
       final Uint8List fileBytes = await file.readAsBytes();
 
       if (fileBytes.isEmpty) {
-        throw Exception(
-          'File tidak dapat dibaca atau kosong.',
-        );
+        throw Exception('File tidak dapat dibaca atau kosong.');
       }
 
       setState(() {
@@ -61,21 +52,14 @@ class _ManagerProductImportPageState
         totalErrors = 0;
       });
 
-      final data = await ApiService.previewProductExcel(
-        fileBytes,
-        file.name,
-      );
+      final data = await ApiService.previewProductExcel(fileBytes, file.name);
 
       if (!mounted) return;
 
       setState(() {
-        rows = List<dynamic>.from(
-          data['rows'] ?? [],
-        );
+        rows = List<dynamic>.from(data['rows'] ?? []);
 
-        errors = List<dynamic>.from(
-          data['errors'] ?? [],
-        );
+        errors = List<dynamic>.from(data['errors'] ?? []);
 
         totalRows = data['total_rows'] ?? 0;
         totalErrors = data['total_errors'] ?? 0;
@@ -89,13 +73,8 @@ class _ManagerProductImportPageState
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Gagal membaca Excel: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Gagal membaca Excel: $e')));
     }
   }
 
@@ -108,9 +87,7 @@ class _ManagerProductImportPageState
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text(
-            'Konfirmasi Import',
-          ),
+          title: const Text('Konfirmasi Import'),
           content: Text(
             'Import $totalRows produk ke database?\n\n'
             'Produk baru akan dibuat dan produk '
@@ -143,9 +120,7 @@ class _ManagerProductImportPageState
         isLoading = true;
       });
 
-      final result = await ApiService.confirmProductExcel(
-        rows,
-      );
+      final result = await ApiService.confirmProductExcel(rows);
 
       if (!mounted) return;
 
@@ -155,30 +130,20 @@ class _ManagerProductImportPageState
 
       final created = result['created'] ?? 0;
       final updated = result['updated'] ?? 0;
-      final stockChanged =
-          result['stock_changed'] ?? 0;
+      final stockChanged = result['stock_changed'] ?? 0;
 
       await showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: const Text(
-              'Import Berhasil',
-            ),
+            title: const Text('Import Berhasil'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Produk baru: $created',
-                ),
-                Text(
-                  'Produk diperbarui: $updated',
-                ),
-                Text(
-                  'Stok berubah: $stockChanged',
-                ),
+                Text('Produk baru: $created'),
+                Text('Produk diperbarui: $updated'),
+                Text('Stok berubah: $stockChanged'),
               ],
             ),
             actions: [
@@ -203,33 +168,21 @@ class _ManagerProductImportPageState
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Import gagal: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Import gagal: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Import Produk Excel',
-        ),
-      ),
+      appBar: AppBar(title: const Text('Import Produk Excel')),
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildFileButton(),
 
@@ -238,43 +191,32 @@ class _ManagerProductImportPageState
                   if (selectedFileName != null)
                     Text(
                       'File: $selectedFileName',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
 
                   const SizedBox(height: 16),
 
-                  if (rows.isNotEmpty)
-                    _buildSummary(),
+                  if (rows.isNotEmpty) _buildSummary(),
 
-                  if (errors.isNotEmpty)
-                    _buildErrors(),
+                  if (errors.isNotEmpty) _buildErrors(),
 
                   const SizedBox(height: 16),
 
                   Expanded(
                     child: rows.isEmpty
                         ? const Center(
-                            child: Text(
-                              'Belum ada file Excel yang dipilih.',
-                            ),
+                            child: Text('Belum ada file Excel yang dipilih.'),
                           )
                         : _buildPreview(),
                   ),
 
-                  if (rows.isNotEmpty &&
-                      errors.isEmpty)
+                  if (rows.isNotEmpty && errors.isEmpty)
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
                         onPressed: confirmImport,
-                        icon: const Icon(
-                          Icons.upload_file,
-                        ),
-                        label: const Text(
-                          'IMPORT KE DATABASE',
-                        ),
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text('IMPORT KE DATABASE'),
                       ),
                     ),
                 ],
@@ -288,12 +230,8 @@ class _ManagerProductImportPageState
       width: double.infinity,
       child: OutlinedButton.icon(
         onPressed: pickExcel,
-        icon: const Icon(
-          Icons.folder_open,
-        ),
-        label: const Text(
-          'Pilih File Excel',
-        ),
+        icon: const Icon(Icons.folder_open),
+        label: const Text('Pilih File Excel'),
       ),
     );
   }
@@ -324,21 +262,14 @@ class _ManagerProductImportPageState
     );
   }
 
-  Widget _summaryItem(
-    String title,
-    String value,
-    IconData icon,
-  ) {
+  Widget _summaryItem(String title, String value, IconData icon) {
     return Column(
       children: [
         Icon(icon),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         Text(title),
       ],
@@ -350,24 +281,19 @@ class _ManagerProductImportPageState
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Terdapat kesalahan:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            ...errors.map(
-              (error) {
-                return Text(
-                  'Baris ${error['row']}: '
-                  '${error['message']}',
-                );
-              },
-            ),
+            ...errors.map((error) {
+              return Text(
+                'Baris ${error['row']}: '
+                '${error['message']}',
+              );
+            }),
           ],
         ),
       ),
@@ -378,21 +304,12 @@ class _ManagerProductImportPageState
     return ListView.builder(
       itemCount: rows.length,
       itemBuilder: (context, index) {
-        final row =
-            Map<String, dynamic>.from(
-          rows[index],
-        );
+        final row = Map<String, dynamic>.from(rows[index]);
 
         return Card(
           child: ListTile(
-            leading: CircleAvatar(
-              child: Text(
-                '${index + 1}',
-              ),
-            ),
-            title: Text(
-              row['name']?.toString() ?? '-',
-            ),
+            leading: CircleAvatar(child: Text('${index + 1}')),
+            title: Text(row['name']?.toString() ?? '-'),
             subtitle: Text(
               'Barcode: ${row['barcode']}\n'
               'Kategori: ${row['category']}\n'

@@ -30,7 +30,7 @@ class SapaanCustRandom {
   }
 }
 
-class PasswordHintRandomAwoawkaoakw{
+class PasswordHintRandomAwoawkaoakw {
   static final List<String> custgreetings = [
     'StudentmartJago',
     'Passwordexample123',

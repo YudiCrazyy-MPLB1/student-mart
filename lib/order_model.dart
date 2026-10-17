@@ -4,10 +4,7 @@ class OrderItem {
   final Product product;
   final int quantity;
 
-  OrderItem({
-    required this.product,
-    required this.quantity,
-  });
+  OrderItem({required this.product, required this.quantity});
 
   int get subtotal => product.price * quantity;
 }

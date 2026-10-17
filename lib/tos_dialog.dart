@@ -9,18 +9,19 @@ class TosDialog extends StatefulWidget {
 
 class _TosDialogState extends State<TosDialog> {
   final ScrollController _scrollController = ScrollController();
-  
+
   bool _isBottomReached = false;
   bool _isChecked = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Mengecek posisi scroll secara real-time
     _scrollController.addListener(() {
       // Jika posisi scroll sudah mencapai batas maksimal bawah (dengan toleransi 10 pixel)
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 10) {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 10) {
         if (!_isBottomReached) {
           setState(() {
             _isBottomReached = true;
@@ -48,9 +49,7 @@ class _TosDialogState extends State<TosDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text(
         'Syarat & Ketentuan Konsinyasi',
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
@@ -74,8 +73,7 @@ class _TosDialogState extends State<TosDialog> {
                   thumbVisibility: true,
                   child: SingleChildScrollView(
                     controller: _scrollController,
-                    child: const Text(
-                      '''SYARAT DAN KETENTUAN PENITIPAN BARANG (KONSINYASI) STUDENT MART:
+                    child: const Text('''SYARAT DAN KETENTUAN PENITIPAN BARANG (KONSINYASI) STUDENT MART:
 
 1. Sistem Konsinyasi (Bagi Hasil)
 Pihak kantin, koperasi, atau pemasok yang menitipkan jualannya di aplikasi Student Mart dikenakan biaya sistem sebesar 1% dari total keuntungan bersih bulanan yang mereka dapatkan melalui Student Mart.
@@ -96,16 +94,14 @@ Admin berhak menolak barang titipan jika dinilai tidak layak jual, melanggar atu
 * Pastikan barang yang dititipkan dalam kondisi baik.
 * Pihak Student Mart berhak mengubah syarat dan ketentuan ini dengan pemberitahuan sebelumnya.
 * Dengan menyetujui persyaratan ini, Anda terikat secara sistem untuk mematuhi regulasi konsinyasi Student Mart SMK Negeri 4 Jember.
-''',
-                      style: TextStyle(fontSize: 14, height: 1.6),
-                    ),
+''', style: TextStyle(fontSize: 14, height: 1.6)),
                   ),
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // CHECKBOX PERSETUJUAN
             Row(
               children: [
@@ -119,7 +115,7 @@ Admin berhak menolak barang titipan jika dinilai tidak layak jual, melanggar atu
                             _isChecked = value ?? false;
                           });
                         }
-                      : null, 
+                      : null,
                 ),
                 Expanded(
                   child: Text(
@@ -133,7 +129,7 @@ Admin berhak menolak barang titipan jika dinilai tidak layak jual, melanggar atu
                 ),
               ],
             ),
-            
+
             // PESAN PERINGATAN (Hilang kalau sudah scroll sampai bawah)
             if (!_isBottomReached)
               const Padding(
@@ -152,14 +148,12 @@ Admin berhak menolak barang titipan jika dinilai tidak layak jual, melanggar atu
       actionsPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context, false), 
+          onPressed: () => Navigator.pop(context, false),
           child: const Text('Batal', style: TextStyle(color: Colors.red)),
         ),
         ElevatedButton(
           // Tombol HANYA AKTIF JIKA checkbox sudah dicentang
-          onPressed: _isChecked
-              ? () => Navigator.pop(context, true) 
-              : null,
+          onPressed: _isChecked ? () => Navigator.pop(context, true) : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 27, 177, 164),
             disabledBackgroundColor: Colors.grey.shade300,
@@ -168,7 +162,10 @@ Admin berhak menolak barang titipan jika dinilai tidak layak jual, melanggar atu
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: const Text('Setuju & Lanjutkan', style: TextStyle(color: Colors.white)),
+          child: const Text(
+            'Setuju & Lanjutkan',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       ],
     );

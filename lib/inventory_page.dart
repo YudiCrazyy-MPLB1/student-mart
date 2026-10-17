@@ -26,9 +26,7 @@ class _InventoryPageState extends State<InventoryPage> {
     });
 
     try {
-      final result = await ApiService.getInventoryProducts(
-        search: search,
-      );
+      final result = await ApiService.getInventoryProducts(search: search);
 
       if (!mounted) return;
 
@@ -43,11 +41,8 @@ class _InventoryPageState extends State<InventoryPage> {
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -185,9 +180,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   Text(
                     'Stok saat ini: $stock',
                     style: TextStyle(
-                      color: stock <= 0
-                          ? Colors.red
-                          : Colors.grey.shade700,
+                      color: stock <= 0 ? Colors.red : Colors.grey.shade700,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -195,9 +188,7 @@ class _InventoryPageState extends State<InventoryPage> {
                     controller: quantityController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: isAdjustment
-                          ? 'Stok baru'
-                          : 'Jumlah',
+                      labelText: isAdjustment ? 'Stok baru' : 'Jumlah',
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -239,11 +230,7 @@ class _InventoryPageState extends State<InventoryPage> {
                             if (!mounted) return;
 
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '$title berhasil.',
-                                ),
-                              ),
+                              SnackBar(content: Text('$title berhasil.')),
                             );
                           } catch (e) {
                             setDialogState(() {
@@ -251,9 +238,7 @@ class _InventoryPageState extends State<InventoryPage> {
                             });
 
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(e.toString()),
-                              ),
+                              SnackBar(content: Text(e.toString())),
                             );
                           }
                         },
@@ -261,9 +246,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Simpan'),
                 ),
@@ -333,9 +316,7 @@ class _InventoryPageState extends State<InventoryPage> {
             const SizedBox(height: 4),
             Text(
               'Minimum stok: $minimumStock',
-              style: TextStyle(
-                color: Colors.grey.shade700,
-              ),
+              style: TextStyle(color: Colors.grey.shade700),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -348,9 +329,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   label: const Text('Tambah'),
                 ),
                 OutlinedButton.icon(
-                  onPressed: stock > 0
-                      ? () => _stockOut(product)
-                      : null,
+                  onPressed: stock > 0 ? () => _stockOut(product) : null,
                   icon: const Icon(Icons.remove),
                   label: const Text('Kurangi'),
                 ),
@@ -387,10 +366,7 @@ class _InventoryPageState extends State<InventoryPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
@@ -427,14 +403,11 @@ class _InventoryPageState extends State<InventoryPage> {
               onChanged: (value) {
                 search = value;
 
-                Future.delayed(
-                  const Duration(milliseconds: 400),
-                  () {
-                    if (search == value && mounted) {
-                      _loadProducts();
-                    }
-                  },
-                );
+                Future.delayed(const Duration(milliseconds: 400), () {
+                  if (search == value && mounted) {
+                    _loadProducts();
+                  }
+                });
               },
               decoration: InputDecoration(
                 hintText: 'Cari produk...',
@@ -458,45 +431,35 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
           Expanded(
             child: isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
+                ? const Center(child: CircularProgressIndicator())
                 : products.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.inventory_2_outlined,
-                              size: 64,
-                            ),
-                            SizedBox(height: 12),
-                            Text(
-                              'Produk tidak ditemukan.',
-                              style: TextStyle(
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
+                ? const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.inventory_2_outlined, size: 64),
+                        SizedBox(height: 12),
+                        Text(
+                          'Produk tidak ditemukan.',
+                          style: TextStyle(fontSize: 16),
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadProducts,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                          ),
-                          itemCount: products.length,
-                          itemBuilder: (context, index) {
-                            final product =
-                                Map<String, dynamic>.from(
-                              products[index],
-                            );
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadProducts,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: products.length,
+                      itemBuilder: (context, index) {
+                        final product = Map<String, dynamic>.from(
+                          products[index],
+                        );
 
-                            return _buildProductCard(product);
-                          },
-                        ),
-                      ),
+                        return _buildProductCard(product);
+                      },
+                    ),
+                  ),
           ),
         ],
       ),

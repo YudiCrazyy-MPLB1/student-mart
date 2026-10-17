@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'product_model.dart';
 import 'cart_controller.dart';
@@ -8,18 +9,13 @@ import 'api_service.dart';
 class ProductDetailPage extends StatefulWidget {
   final Product product;
 
-  const ProductDetailPage({
-    super.key,
-    required this.product,
-  });
+  const ProductDetailPage({super.key, required this.product});
 
   @override
-  State<ProductDetailPage> createState() =>
-      _ProductDetailPageState();
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
 }
 
-class _ProductDetailPageState
-    extends State<ProductDetailPage> {
+class _ProductDetailPageState extends State<ProductDetailPage> {
   Product? product;
 
   bool isLoading = true;
@@ -28,10 +24,7 @@ class _ProductDetailPageState
   int quantity = 1;
 
   String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]}.',
-    )}';
+    return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
   }
 
   @override
@@ -43,9 +36,7 @@ class _ProductDetailPageState
 
   Future<void> _loadProduct() async {
     try {
-      final data = await ApiService.getProduct(
-        widget.product.id,
-      );
+      final data = await ApiService.getProduct(widget.product.id);
 
       if (!mounted) return;
 
@@ -85,32 +76,26 @@ class _ProductDetailPageState
     if (product == null) return;
 
     if (product!.stock <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Produk sedang habis.'),
-        ),
-      );
-
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Produk sedang habis.')));
       return;
     }
 
+    final cart = context.read<CartController>();
+
     for (int i = 0; i < quantity; i++) {
-      cartController.addToCart(product!);
+      cart.addToCart(product!);
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          '$quantity ${product!.name} ditambahkan ke keranjang',
-        ),
+        content: Text('$quantity ${product!.name} ditambahkan ke keranjang'),
         action: SnackBarAction(
           label: 'Lihat',
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const CartPage(),
-              ),
+              MaterialPageRoute(builder: (context) => const CartPage()),
             );
           },
         ),
@@ -121,18 +106,14 @@ class _ProductDetailPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Produk'),
-      ),
+      appBar: AppBar(title: const Text('Detail Produk')),
       body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (errorMessage != null) {
@@ -142,24 +123,14 @@ class _ProductDetailPageState
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.cloud_off,
-                size: 60,
-                color: Colors.grey,
-              ),
+              const Icon(Icons.cloud_off, size: 60, color: Colors.grey),
               const SizedBox(height: 16),
               const Text(
                 'Gagal mengambil produk',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Text(
-                errorMessage!,
-                textAlign: TextAlign.center,
-              ),
+              Text(errorMessage!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () {
@@ -180,21 +151,17 @@ class _ProductDetailPageState
     }
 
     if (product == null) {
-      return const Center(
-        child: Text('Produk tidak ditemukan.'),
-      );
+      return const Center(child: Text('Produk tidak ditemukan.'));
     }
 
     final currentProduct = product!;
 
-    final int subtotal =
-        currentProduct.price * quantity;
+    final int subtotal = currentProduct.price * quantity;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // GAMBAR
           Container(
@@ -202,13 +169,11 @@ class _ProductDetailPageState
             height: 250,
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
-              borderRadius:
-                  BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: currentProduct.image != null
                 ? ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20),
                     child: Image.network(
                       currentProduct.image!,
                       fit: BoxFit.cover,
@@ -239,10 +204,7 @@ class _ProductDetailPageState
           // NAMA
           Text(
             currentProduct.name,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 8),
@@ -263,9 +225,7 @@ class _ProductDetailPageState
           Text(
             'Stok tersedia: ${currentProduct.stock}',
             style: TextStyle(
-              color: currentProduct.stock > 0
-                  ? Colors.grey
-                  : Colors.red,
+              color: currentProduct.stock > 0 ? Colors.grey : Colors.red,
             ),
           ),
 
@@ -274,10 +234,7 @@ class _ProductDetailPageState
           // DESKRIPSI
           const Text(
             'Deskripsi',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 8),
@@ -298,10 +255,7 @@ class _ProductDetailPageState
           // JUMLAH
           const Text(
             'Jumlah',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 12),
@@ -310,9 +264,7 @@ class _ProductDetailPageState
             children: [
               IconButton(
                 onPressed: _decreaseQuantity,
-                icon: const Icon(
-                  Icons.remove_circle_outline,
-                ),
+                icon: const Icon(Icons.remove_circle_outline),
               ),
 
               Text(
@@ -325,9 +277,7 @@ class _ProductDetailPageState
 
               IconButton(
                 onPressed: _increaseQuantity,
-                icon: const Icon(
-                  Icons.add_circle_outline,
-                ),
+                icon: const Icon(Icons.add_circle_outline),
               ),
             ],
           ),
@@ -336,15 +286,11 @@ class _ProductDetailPageState
 
           // SUBTOTAL
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Subtotal',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
                 formatRupiah(subtotal),
@@ -364,9 +310,7 @@ class _ProductDetailPageState
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: currentProduct.stock > 0
-                  ? _addToCart
-                  : null,
+              onPressed: currentProduct.stock > 0 ? _addToCart : null,
               child: Text(
                 currentProduct.stock > 0
                     ? 'Tambah ke Keranjang'

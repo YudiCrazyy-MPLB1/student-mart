@@ -57,10 +57,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
         isLoading = false;
       });
 
-      showMessage(
-        'Gagal mengambil produk: $e',
-        isError: true,
-      );
+      showMessage('Gagal mengambil produk: $e', isError: true);
     }
   }
 
@@ -91,10 +88,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
         isLoadingCategories = false;
       });
 
-      showMessage(
-        'Gagal mengambil kategori: $e',
-        isError: true,
-      );
+      showMessage('Gagal mengambil kategori: $e', isError: true);
     }
   }
 
@@ -124,18 +118,13 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
 
       if (!mounted) return;
 
-      showMessage(
-        'Produk berhasil dinonaktifkan.',
-      );
+      showMessage('Produk berhasil dinonaktifkan.');
 
       await loadProducts();
     } catch (e) {
       if (!mounted) return;
 
-      showMessage(
-        'Gagal menonaktifkan produk: $e',
-        isError: true,
-      );
+      showMessage('Gagal menonaktifkan produk: $e', isError: true);
     }
   }
 
@@ -149,18 +138,13 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
 
       if (!mounted) return;
 
-      showMessage(
-        'Produk berhasil diaktifkan.',
-      );
+      showMessage('Produk berhasil diaktifkan.');
 
       await loadProducts();
     } catch (e) {
       if (!mounted) return;
 
-      showMessage(
-        'Gagal mengaktifkan produk: $e',
-        isError: true,
-      );
+      showMessage('Gagal mengaktifkan produk: $e', isError: true);
     }
   }
 
@@ -194,10 +178,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
     } catch (e) {
       if (!mounted) return;
 
-      showMessage(
-        'Gagal memilih gambar: $e',
-        isError: true,
-      );
+      showMessage('Gagal memilih gambar: $e', isError: true);
     }
   }
 
@@ -205,12 +186,8 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
   // PRODUCT FORM
   // ============================================================
 
-  Future<void> showProductForm({
-    Product? product,
-  }) async {
-    final nameController = TextEditingController(
-      text: product?.name ?? '',
-    );
+  Future<void> showProductForm({Product? product}) async {
+    final nameController = TextEditingController(text: product?.name ?? '');
 
     final descriptionController = TextEditingController(
       text: product?.description ?? '',
@@ -242,16 +219,9 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
         bool isSaving = false;
 
         return StatefulBuilder(
-          builder: (
-            context,
-            setDialogState,
-          ) {
+          builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(
-                product == null
-                    ? 'Tambah Produk'
-                    : 'Edit Produk',
-              ),
+              title: Text(product == null ? 'Tambah Produk' : 'Edit Produk'),
 
               content: SizedBox(
                 width: 500,
@@ -263,7 +233,6 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-
                         // ==================================================
                         // NAMA
                         // ==================================================
@@ -274,14 +243,11 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                           decoration: const InputDecoration(
                             labelText: 'Nama Produk',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(
-                              Icons.inventory_2_outlined,
-                            ),
+                            prefixIcon: Icon(Icons.inventory_2_outlined),
                           ),
 
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Nama produk wajib diisi.';
                             }
 
@@ -294,7 +260,6 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                         // ==================================================
                         // DESKRIPSI
                         // ==================================================
-
                         TextFormField(
                           controller: descriptionController,
 
@@ -303,9 +268,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                           decoration: const InputDecoration(
                             labelText: 'Deskripsi',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(
-                              Icons.description_outlined,
-                            ),
+                            prefixIcon: Icon(Icons.description_outlined),
                           ),
                         ),
 
@@ -314,92 +277,82 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                         // ==================================================
                         // KATEGORI
                         // ==================================================
-
                         if (isLoadingCategories)
                           const Padding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
+                            padding: EdgeInsets.symmetric(vertical: 12),
                             child: CircularProgressIndicator(),
                           )
                         else
                           DropdownButtonFormField<int>(
-  initialValue: selectedCategoryId,
+                            initialValue: selectedCategoryId,
 
-  decoration: const InputDecoration(
-    labelText: 'Kategori',
-    border: OutlineInputBorder(),
-    prefixIcon: Icon(
-      Icons.category_outlined,
-    ),
-  ),
+                            decoration: const InputDecoration(
+                              labelText: 'Kategori',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.category_outlined),
+                            ),
 
-  items: categories.map((category) {
-    final dynamic rawId = category['id'];
+                            items: categories
+                                .map((category) {
+                                  final dynamic rawId = category['id'];
 
-    final int? categoryId = rawId is int
-        ? rawId
-        : int.tryParse(rawId.toString());
+                                  final int? categoryId = rawId is int
+                                      ? rawId
+                                      : int.tryParse(rawId.toString());
 
-    if (categoryId == null) {
-      return null;
-    }
+                                  if (categoryId == null) {
+                                    return null;
+                                  }
 
-    return DropdownMenuItem<int>(
-      value: categoryId,
-      child: Text(
-        category['name']?.toString() ?? 'Tanpa Nama',
-      ),
-    );
-  }).whereType<DropdownMenuItem<int>>().toList(),
+                                  return DropdownMenuItem<int>(
+                                    value: categoryId,
+                                    child: Text(
+                                      category['name']?.toString() ??
+                                          'Tanpa Nama',
+                                    ),
+                                  );
+                                })
+                                .whereType<DropdownMenuItem<int>>()
+                                .toList(),
 
-  onChanged: categories.isEmpty
-      ? null
-      : (value) {
-          setDialogState(() {
-            selectedCategoryId = value;
-          });
-        },
+                            onChanged: categories.isEmpty
+                                ? null
+                                : (value) {
+                                    setDialogState(() {
+                                      selectedCategoryId = value;
+                                    });
+                                  },
 
-  validator: (value) {
-    if (value == null) {
-      return 'Kategori wajib dipilih.';
-    }
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Kategori wajib dipilih.';
+                              }
 
-    return null;
-  },
-),
+                              return null;
+                            },
+                          ),
 
                         const SizedBox(height: 12),
 
                         // ==================================================
                         // HARGA
                         // ==================================================
-
                         TextFormField(
                           controller: priceController,
 
-                          keyboardType:
-                              TextInputType.number,
+                          keyboardType: TextInputType.number,
 
-                          decoration:
-                              const InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Harga',
                             prefixText: 'Rp ',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(
-                              Icons.payments_outlined,
-                            ),
+                            prefixIcon: Icon(Icons.payments_outlined),
                           ),
 
                           validator: (value) {
-                            final price =
-                                int.tryParse(
-                              value ?? '',
-                            );
+                            final price = int.tryParse(value ?? '');
 
-                            if (price == null ||
-                                price < 0) {
+                            if (price == null || price < 0) {
                               return 'Harga tidak valid.';
                             }
 
@@ -412,30 +365,21 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                         // ==================================================
                         // STOK
                         // ==================================================
-
                         TextFormField(
                           controller: stockController,
 
-                          keyboardType:
-                              TextInputType.number,
+                          keyboardType: TextInputType.number,
 
-                          decoration:
-                              const InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Stok',
                             border: OutlineInputBorder(),
-                            prefixIcon: Icon(
-                              Icons.inventory_outlined,
-                            ),
+                            prefixIcon: Icon(Icons.inventory_outlined),
                           ),
 
                           validator: (value) {
-                            final stock =
-                                int.tryParse(
-                              value ?? '',
-                            );
+                            final stock = int.tryParse(value ?? '');
 
-                            if (stock == null ||
-                                stock < 0) {
+                            if (stock == null || stock < 0) {
                               return 'Stok tidak valid.';
                             }
 
@@ -448,17 +392,14 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                         // ==================================================
                         // IMAGE UPLOAD
                         // ==================================================
-
                         Align(
-                          alignment:
-                              Alignment.centerLeft,
+                          alignment: Alignment.centerLeft,
 
                           child: const Text(
                             'Gambar Produk',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight:
-                                  FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -470,106 +411,68 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                           height: 200,
 
                           decoration: BoxDecoration(
-                            color:
-                                Colors.grey.shade100,
+                            color: Colors.grey.shade100,
 
-                            borderRadius:
-                                BorderRadius.circular(
-                              12,
-                            ),
+                            borderRadius: BorderRadius.circular(12),
 
-                            border: Border.all(
-                              color:
-                                  Colors.grey.shade400,
-                            ),
+                            border: Border.all(color: Colors.grey.shade400),
                           ),
 
-                          clipBehavior:
-                              Clip.antiAlias,
+                          clipBehavior: Clip.antiAlias,
 
-                          child:
-                              selectedImageBytes != null
-                                  ? Image.memory(
-                                      selectedImageBytes!,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : product?.image != null &&
-                                          product!.image!
-                                              .trim()
-                                              .isNotEmpty
-                                      ? Image.network(
-                                          ApiService
-                                              .getImageUrl(
-                                            product.image,
+                          child: selectedImageBytes != null
+                              ? Image.memory(
+                                  selectedImageBytes!,
+                                  fit: BoxFit.cover,
+                                )
+                              : product?.image != null &&
+                                    product!.image!.trim().isNotEmpty
+                              ? Image.network(
+                                  ApiService.getImageUrl(product.image),
+
+                                  fit: BoxFit.cover,
+
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
+
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
+
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.image_not_supported_outlined,
+                                            size: 50,
                                           ),
-
-                                          fit:
-                                              BoxFit.cover,
-
-                                          loadingBuilder:
-                                              (
-                                            context,
-                                            child,
-                                            loadingProgress,
-                                          ) {
-                                            if (loadingProgress ==
-                                                null) {
-                                              return child;
-                                            }
-
-                                            return const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            );
-                                          },
-
-                                          errorBuilder:
-                                              (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) {
-                                            return const Center(
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(
-                                                    Icons
-                                                        .image_not_supported_outlined,
-                                                    size: 50,
-                                                  ),
-                                                  SizedBox(
-                                                    height:
-                                                        8,
-                                                  ),
-                                                  Text(
-                                                    'Gambar tidak dapat dimuat',
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        )
-                                      : const Center(
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons
-                                                    .add_photo_alternate_outlined,
-                                                size: 55,
-                                              ),
-                                              SizedBox(
-                                                height: 8,
-                                              ),
-                                              Text(
-                                                'Belum ada gambar',
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                          SizedBox(height: 8),
+                                          Text('Gambar tidak dapat dimuat'),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                )
+                              : const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.add_photo_alternate_outlined,
+                                        size: 55,
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text('Belum ada gambar'),
+                                    ],
+                                  ),
+                                ),
                         ),
 
                         const SizedBox(height: 10),
@@ -577,39 +480,30 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                         // ==================================================
                         // BUTTON PICK IMAGE
                         // ==================================================
-
                         SizedBox(
                           width: double.infinity,
 
-                          child:
-                              OutlinedButton.icon(
+                          child: OutlinedButton.icon(
                             onPressed: isSaving
                                 ? null
                                 : () async {
                                     await pickProductImage(
-                                      imagePicker:
-                                          imagePicker,
+                                      imagePicker: imagePicker,
 
-                                      setDialogState:
-                                          setDialogState,
+                                      setDialogState: setDialogState,
 
-                                      setSelectedImage:
-                                          (image) {
-                                        selectedImage =
-                                            image;
+                                      setSelectedImage: (image) {
+                                        selectedImage = image;
                                       },
 
-                                      setSelectedImageBytes:
-                                          (bytes) {
-                                        selectedImageBytes =
-                                            bytes;
+                                      setSelectedImageBytes: (bytes) {
+                                        selectedImageBytes = bytes;
                                       },
                                     );
                                   },
 
                             icon: const Icon(
-                              Icons
-                                  .add_photo_alternate_outlined,
+                              Icons.add_photo_alternate_outlined,
                             ),
 
                             label: Text(
@@ -623,27 +517,23 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                         // ==================================================
                         // IMAGE INFO
                         // ==================================================
-
                         if (selectedImage != null) ...[
                           const SizedBox(height: 6),
 
                           Align(
-                            alignment:
-                                Alignment.centerLeft,
+                            alignment: Alignment.centerLeft,
 
                             child: Text(
                               selectedImage!.name,
 
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors
-                                    .grey.shade700,
+                                color: Colors.grey.shade700,
                               ),
 
                               maxLines: 1,
 
-                              overflow:
-                                  TextOverflow.ellipsis,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -653,14 +543,10 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                         // ==================================================
                         // ACTIVE SWITCH
                         // ==================================================
-
                         SwitchListTile(
-                          contentPadding:
-                              EdgeInsets.zero,
+                          contentPadding: EdgeInsets.zero,
 
-                          title: const Text(
-                            'Produk Aktif',
-                          ),
+                          title: const Text('Produk Aktif'),
 
                           subtitle: Text(
                             isActive
@@ -674,8 +560,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                               ? null
                               : (value) {
                                   setDialogState(() {
-                                    isActive =
-                                        value;
+                                    isActive = value;
                                   });
                                 },
                         ),
@@ -688,29 +573,22 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
               // ============================================================
               // ACTIONS
               // ============================================================
-
               actions: [
                 TextButton(
                   onPressed: isSaving
                       ? null
                       : () {
-                          Navigator.pop(
-                            context,
-                          );
+                          Navigator.pop(context);
                         },
 
-                  child: const Text(
-                    'Batal',
-                  ),
+                  child: const Text('Batal'),
                 ),
 
                 FilledButton.icon(
                   onPressed: isSaving
                       ? null
                       : () async {
-                          if (!formKey
-                              .currentState!
-                              .validate()) {
+                          if (!formKey.currentState!.validate()) {
                             return;
                           }
 
@@ -719,28 +597,17 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                           });
 
                           try {
-                            final name =
-                                nameController
-                                    .text
-                                    .trim();
+                            final name = nameController.text.trim();
 
-                            final description =
-                                descriptionController
-                                    .text
-                                    .trim();
+                            final description = descriptionController.text
+                                .trim();
 
-                            final price =
-                                int.parse(
-                              priceController
-                                  .text
-                                  .trim(),
+                            final price = int.parse(
+                              priceController.text.trim(),
                             );
 
-                            final stock =
-                                int.parse(
-                              stockController
-                                  .text
-                                  .trim(),
+                            final stock = int.parse(
+                              stockController.text.trim(),
                             );
 
                             // ==================================================
@@ -748,18 +615,14 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                             // ==================================================
 
                             if (product == null) {
-                              await ApiService
-                                  .createManagerProduct(
-                                categoryId:
-                                    selectedCategoryId!,
+                              await ApiService.createManagerProduct(
+                                categoryId: selectedCategoryId!,
 
                                 name: name,
 
-                                description:
-                                    description
-                                            .isEmpty
-                                        ? null
-                                        : description,
+                                description: description.isEmpty
+                                    ? null
+                                    : description,
 
                                 price: price,
 
@@ -767,31 +630,23 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
 
                                 isActive: isActive,
 
-                                imageFile:
-                                    selectedImage,
+                                imageFile: selectedImage,
                               );
                             }
-
                             // ==================================================
                             // UPDATE
                             // ==================================================
-
                             else {
-                              await ApiService
-                                  .updateManagerProduct(
-                                productId:
-                                    product.id,
+                              await ApiService.updateManagerProduct(
+                                productId: product.id,
 
-                                categoryId:
-                                    selectedCategoryId!,
+                                categoryId: selectedCategoryId!,
 
                                 name: name,
 
-                                description:
-                                    description
-                                            .isEmpty
-                                        ? null
-                                        : description,
+                                description: description.isEmpty
+                                    ? null
+                                    : description,
 
                                 price: price,
 
@@ -799,16 +654,13 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
 
                                 isActive: isActive,
 
-                                imageFile:
-                                    selectedImage,
+                                imageFile: selectedImage,
                               );
                             }
 
                             if (!mounted) return;
 
-                            Navigator.pop(
-                              context,
-                            );
+                            Navigator.pop(context);
 
                             showMessage(
                               product == null
@@ -836,20 +688,11 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                           width: 18,
                           height: 18,
 
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(
-                          Icons.save_outlined,
-                        ),
+                      : const Icon(Icons.save_outlined),
 
-                  label: Text(
-                    isSaving
-                        ? 'Menyimpan...'
-                        : 'Simpan',
-                  ),
+                  label: Text(isSaving ? 'Menyimpan...' : 'Simpan'),
                 ),
               ],
             );
@@ -872,17 +715,13 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
   // MESSAGE
   // ============================================================
 
-  void showMessage(
-    String message, {
-    bool isError = false,
-  }) {
+  void showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor:
-            isError ? Colors.red : null,
+        backgroundColor: isError ? Colors.red : null,
       ),
     );
   }
@@ -892,10 +731,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
   // ============================================================
 
   String formatPrice(int price) {
-    return 'Rp ${price.toString().replaceAllMapped(
-          RegExp(r'\B(?=(\d{3})+(?!\d))'),
-          (match) => '.',
-        )}';
+    return 'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}';
   }
 
   // ============================================================
@@ -903,77 +739,57 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
   // ============================================================
 
   Widget buildProductImage(
-  String? image, {
-  double width = 60,
-  double height = 60,
-  double borderRadius = 8,
-}) {
-  final imageUrl = ApiService.getImageUrl(image);
+    String? image, {
+    double width = 60,
+    double height = 60,
+    double borderRadius = 8,
+  }) {
+    final imageUrl = ApiService.getImageUrl(image);
 
-  if (imageUrl.isEmpty) {
+    if (imageUrl.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+        child: const Icon(Icons.inventory_2_outlined, color: Colors.grey),
+      );
+    }
+
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(
-          borderRadius,
-        ),
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
-      child: const Icon(
-        Icons.inventory_2_outlined,
-        color: Colors.grey,
+      clipBehavior: Clip.antiAlias,
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+
+          return const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(Icons.image_not_supported_outlined, color: Colors.grey),
+          );
+        },
       ),
     );
   }
-
-  return Container(
-    width: width,
-    height: height,
-    decoration: BoxDecoration(
-      color: Colors.grey.shade200,
-      borderRadius: BorderRadius.circular(
-        borderRadius,
-      ),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: Image.network(
-      imageUrl,
-      fit: BoxFit.cover,
-      loadingBuilder: (
-        context,
-        child,
-        loadingProgress,
-      ) {
-        if (loadingProgress == null) {
-          return child;
-        }
-
-        return const Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-            ),
-          ),
-        );
-      },
-      errorBuilder: (
-        context,
-        error,
-        stackTrace,
-      ) {
-        return const Center(
-          child: Icon(
-            Icons.image_not_supported_outlined,
-            color: Colors.grey,
-          ),
-        );
-      },
-    ),
-  );
-}
 
   // ============================================================
   // BUILD
@@ -981,43 +797,31 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
 
   @override
   Widget build(BuildContext context) {
-    final visibleProducts =
-        filteredProducts;
+    final visibleProducts = filteredProducts;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Kelola Produk',
-        ),
+        title: const Text('Kelola Produk'),
 
         actions: [
           IconButton(
             tooltip: 'Refresh',
 
-            onPressed: isLoading
-                ? null
-                : loadProducts,
+            onPressed: isLoading ? null : loadProducts,
 
-            icon: const Icon(
-              Icons.refresh,
-            ),
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
 
-      floatingActionButton:
-          FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           showProductForm();
         },
 
-        icon: const Icon(
-          Icons.add,
-        ),
+        icon: const Icon(Icons.add),
 
-        label: const Text(
-          'Tambah Produk',
-        ),
+        label: const Text('Tambah Produk'),
       ),
 
       body: Column(
@@ -1027,47 +831,34 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
           // ========================================================
 
           Padding(
-            padding:
-                const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
 
             child: TextField(
-              decoration:
-                  InputDecoration(
-                hintText:
-                    'Cari produk...',
+              decoration: InputDecoration(
+                hintText: 'Cari produk...',
 
-                prefixIcon:
-                    const Icon(
-                  Icons.search,
-                ),
+                prefixIcon: const Icon(Icons.search),
 
-                suffixIcon:
-                    searchQuery.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              setState(() {
-                                searchQuery =
-                                    '';
-                              });
-                            },
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        onPressed: () {
+                          setState(() {
+                            searchQuery = '';
+                          });
+                        },
 
-                            icon:
-                                const Icon(
-                              Icons.clear,
-                            ),
-                          )
-                        : null,
+                        icon: const Icon(Icons.clear),
+                      )
+                    : null,
 
-                border:
-                    const OutlineInputBorder(),
+                border: const OutlineInputBorder(),
 
                 filled: true,
               ),
 
               onChanged: (value) {
                 setState(() {
-                  searchQuery =
-                      value;
+                  searchQuery = value;
                 });
               },
             ),
@@ -1076,322 +867,187 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
           // ========================================================
           // PRODUCT LIST
           // ========================================================
-
           Expanded(
             child: isLoading
-                ? const Center(
-                    child:
-                        CircularProgressIndicator(),
-                  )
-                : visibleProducts
-                        .isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment
-                                  .center,
+                ? const Center(child: CircularProgressIndicator())
+                : visibleProducts.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
 
-                          children: [
-                            Icon(
-                              Icons
-                                  .inventory_2_outlined,
-                              size: 70,
-                              color: Colors
-                                  .grey.shade400,
-                            ),
-
-                            const SizedBox(
-                              height: 12,
-                            ),
-
-                            const Text(
-                              'Produk tidak ditemukan.',
-                            ),
-                          ],
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 70,
+                          color: Colors.grey.shade400,
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh:
-                            loadProducts,
 
-                        child:
-                            ListView.builder(
-                          padding:
-                              const EdgeInsets
-                                  .fromLTRB(
-                            16,
-                            0,
-                            16,
-                            100,
-                          ),
+                        const SizedBox(height: 12),
 
-                          itemCount:
-                              visibleProducts
-                                  .length,
+                        const Text('Produk tidak ditemukan.'),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: loadProducts,
 
-                          itemBuilder:
-                              (
-                            context,
-                            index,
-                          ) {
-                            final product =
-                                visibleProducts[
-                                    index];
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
 
-                            return Card(
-                              margin:
-                                  const EdgeInsets
-                                      .only(
-                                bottom: 12,
+                      itemCount: visibleProducts.length,
+
+                      itemBuilder: (context, index) {
+                        final product = visibleProducts[index];
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(12),
+
+                            // ==================================================
+                            // PRODUCT IMAGE
+                            // ==================================================
+                            leading: buildProductImage(product.image),
+
+                            // ==================================================
+                            // PRODUCT NAME
+                            // ==================================================
+                            title: Text(
+                              product.name,
+
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
+                            ),
 
-                              child:
-                                  ListTile(
-                                contentPadding:
-                                    const EdgeInsets
-                                        .all(
-                                  12,
-                                ),
+                            // ==================================================
+                            // PRODUCT INFO
+                            // ==================================================
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
 
-                                // ==================================================
-                                // PRODUCT IMAGE
-                                // ==================================================
+                              children: [
+                                const SizedBox(height: 5),
 
-                                leading:
-                                    buildProductImage(
-                                  product.image,
-                                ),
+                                Text(
+                                  formatPrice(product.price),
 
-                                // ==================================================
-                                // PRODUCT NAME
-                                // ==================================================
-
-                                title: Text(
-                                  product.name,
-
-                                  style:
-                                      const TextStyle(
-                                    fontWeight:
-                                        FontWeight
-                                            .bold,
-                                    fontSize: 16,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
 
-                                // ==================================================
-                                // PRODUCT INFO
-                                // ==================================================
+                                const SizedBox(height: 2),
 
-                                subtitle:
-                                    Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment
-                                          .start,
+                                Text('Stok: ${product.stock}'),
 
+                                const SizedBox(height: 4),
+
+                                Row(
                                   children: [
-                                    const SizedBox(
-                                      height: 5,
+                                    Icon(
+                                      product.isActive
+                                          ? Icons.check_circle
+                                          : Icons.cancel,
+
+                                      size: 16,
+
+                                      color: product.isActive
+                                          ? Colors.green
+                                          : Colors.red,
                                     ),
+
+                                    const SizedBox(width: 5),
 
                                     Text(
-                                      formatPrice(
-                                        product.price,
+                                      product.isActive ? 'Aktif' : 'Nonaktif',
+
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+
+                                        color: product.isActive
+                                            ? Colors.green
+                                            : Colors.red,
                                       ),
-
-                                      style:
-                                          const TextStyle(
-                                        fontWeight:
-                                            FontWeight
-                                                .w600,
-                                      ),
-                                    ),
-
-                                    const SizedBox(
-                                      height: 2,
-                                    ),
-
-                                    Text(
-                                      'Stok: ${product.stock}',
-                                    ),
-
-                                    const SizedBox(
-                                      height: 4,
-                                    ),
-
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          product
-                                                  .isActive
-                                              ? Icons
-                                                  .check_circle
-                                              : Icons
-                                                  .cancel,
-
-                                          size: 16,
-
-                                          color: product
-                                                  .isActive
-                                              ? Colors
-                                                  .green
-                                              : Colors
-                                                  .red,
-                                        ),
-
-                                        const SizedBox(
-                                          width: 5,
-                                        ),
-
-                                        Text(
-                                          product
-                                                  .isActive
-                                              ? 'Aktif'
-                                              : 'Nonaktif',
-
-                                          style:
-                                              TextStyle(
-                                            fontWeight:
-                                                FontWeight
-                                                    .bold,
-
-                                            color: product
-                                                    .isActive
-                                                ? Colors
-                                                    .green
-                                                : Colors
-                                                    .red,
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ],
                                 ),
+                              ],
+                            ),
 
-                                // ==================================================
-                                // MENU
-                                // ==================================================
+                            // ==================================================
+                            // MENU
+                            // ==================================================
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (value) async {
+                                if (value == 'edit') {
+                                  await showProductForm(product: product);
+                                }
 
-                                trailing:
-                                    PopupMenuButton<
-                                        String>(
-                                  onSelected:
-                                      (
-                                    value,
-                                  ) async {
-                                    if (value ==
-                                        'edit') {
-                                      await showProductForm(
-                                        product:
-                                            product,
-                                      );
-                                    }
+                                if (value == 'deactivate') {
+                                  await deactivateProduct(product);
+                                }
 
-                                    if (value ==
-                                        'deactivate') {
-                                      await deactivateProduct(
-                                        product,
-                                      );
-                                    }
+                                if (value == 'activate') {
+                                  await activateProduct(product);
+                                }
+                              },
 
-                                    if (value ==
-                                        'activate') {
-                                      await activateProduct(
-                                        product,
-                                      );
-                                    }
-                                  },
+                              itemBuilder: (context) {
+                                return [
+                                  const PopupMenuItem<String>(
+                                    value: 'edit',
 
-                                  itemBuilder:
-                                      (
-                                    context,
-                                  ) {
-                                    return [
-                                      const PopupMenuItem<
-                                          String>(
-                                        value:
-                                            'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit_outlined),
 
-                                        child:
-                                            Row(
-                                          children: [
-                                            Icon(
-                                              Icons
-                                                  .edit_outlined,
-                                            ),
+                                        SizedBox(width: 8),
 
-                                            SizedBox(
-                                              width:
-                                                  8,
-                                            ),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
 
-                                            Text(
-                                              'Edit',
-                                            ),
-                                          ],
-                                        ),
+                                  if (product.isActive)
+                                    const PopupMenuItem<String>(
+                                      value: 'deactivate',
+
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.visibility_off_outlined),
+
+                                          SizedBox(width: 8),
+
+                                          Text('Nonaktifkan'),
+                                        ],
                                       ),
+                                    ),
 
-                                      if (product
-                                          .isActive)
-                                        const PopupMenuItem<
-                                            String>(
-                                          value:
-                                              'deactivate',
+                                  if (!product.isActive)
+                                    const PopupMenuItem<String>(
+                                      value: 'activate',
 
-                                          child:
-                                              Row(
-                                            children: [
-                                              Icon(
-                                                Icons
-                                                    .visibility_off_outlined,
-                                              ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.visibility_outlined),
 
-                                              SizedBox(
-                                                width:
-                                                    8,
-                                              ),
+                                          SizedBox(width: 8),
 
-                                              Text(
-                                                'Nonaktifkan',
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                                      if (!product
-                                          .isActive)
-                                        const PopupMenuItem<
-                                            String>(
-                                          value:
-                                              'activate',
-
-                                          child:
-                                              Row(
-                                            children: [
-                                              Icon(
-                                                Icons
-                                                    .visibility_outlined,
-                                              ),
-
-                                              SizedBox(
-                                                width:
-                                                    8,
-                                              ),
-
-                                              Text(
-                                                'Aktifkan',
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                    ];
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                                          Text('Aktifkan'),
+                                        ],
+                                      ),
+                                    ),
+                                ];
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),

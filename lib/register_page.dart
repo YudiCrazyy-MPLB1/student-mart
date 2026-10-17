@@ -1,14 +1,7 @@
-
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
-
-const Color brandGreen = Color(0xFF1976D2); // Biru utama
-const Color darkGreen = Color(0xFF0D47A1); // Biru gelap
-const Color paleGreen = Color(0xFFE3F2FD); // Biru muda
-const Color pageBackground = Color(0xFFF7FAFE);
-const Color textDark = Color(0xFF20354A);
-const Color textMuted = Color(0xFF7B8A9A);
+import 'theme.dart' as theme;
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -53,45 +46,31 @@ class _RegisterPageState extends State<RegisterPage> {
         password.isEmpty ||
         confirmation.isEmpty ||
         kodeUndangan.isEmpty) {
-      _showMessage(
-        'Semua kolom wajib diisi.',
-        isError: true,
-      );
+      _showMessage('Semua kolom wajib diisi.', isError: true);
       return;
     }
 
-    final emailRegex = RegExp(
-      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-    );
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
     if (!emailRegex.hasMatch(email)) {
-      _showMessage(
-        'Masukkan alamat email yang valid.',
-        isError: true,
-      );
+      _showMessage('Masukkan alamat email yang valid.', isError: true);
       return;
     }
 
     if (password.length < 8) {
-      _showMessage(
-        'Password minimal 8 karakter.',
-        isError: true,
-      );
+      _showMessage('Password minimal 8 karakter.', isError: true);
       return;
     }
 
     if (password != confirmation) {
-      _showMessage(
-        'Konfirmasi password tidak sama.',
-        isError: true,
-      );
+      _showMessage('Konfirmasi password tidak sama.', isError: true);
       return;
     }
 
     setState(() => isLoading = true);
 
     try {
-      final data = await ApiService.register(
+      await ApiService.register(
         name: name,
         email: email,
         password: password,
@@ -101,28 +80,22 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (!mounted) return;
 
-      final user = data['user'];
-      final registeredName =
-          user is Map ? user['name']?.toString() : null;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Akun ${registeredName ?? name} berhasil dibuat.',
+            'Pendaftaran berhasil! Silakan cek inbox/spam email kamu untuk verifikasi sebelum login.',
           ),
-          backgroundColor: brandGreen,
+          backgroundColor: theme.brandGreen,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
         ),
       );
 
       Navigator.pop(context);
-      
     } catch (e) {
       if (!mounted) return;
 
-      final message = e
-          .toString()
-          .replaceFirst('Exception: ', '');
+      final message = e.toString().replaceFirst('Exception: ', '');
 
       _showMessage(message, isError: true);
     } finally {
@@ -132,16 +105,13 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  void _showMessage(
-    String message, {
-    bool isError = false,
-  }) {
+  void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red.shade700 : brandGreen,
+        backgroundColor: isError ? Colors.red.shade700 : theme.brandGreen,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -171,7 +141,7 @@ class _RegisterPageState extends State<RegisterPage> {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: textDark,
+            color: theme.textDark,
           ),
         ),
         const SizedBox(height: 8),
@@ -184,15 +154,8 @@ class _RegisterPageState extends State<RegisterPage> {
           onSubmitted: (_) => onSubmitted?.call(),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-              color: textMuted,
-              fontSize: 14,
-            ),
-            prefixIcon: Icon(
-              icon,
-              color: brandGreen,
-              size: 20,
-            ),
+            hintStyle: const TextStyle(color: theme.textMuted, fontSize: 14),
+            prefixIcon: Icon(icon, color: theme.brandGreen, size: 20),
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.white,
@@ -202,28 +165,19 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                color: Color(0xFFDDE7E0),
-              ),
+              borderSide: const BorderSide(color: Color(0xFFDDE7E0)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                color: Color(0xFFDDE7E0),
-              ),
+              borderSide: const BorderSide(color: Color(0xFFDDE7E0)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                color: brandGreen,
-                width: 1.5,
-              ),
+              borderSide: const BorderSide(color: theme.brandGreen, width: 1.5),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                color: Color(0xFFE8EEE9),
-              ),
+              borderSide: const BorderSide(color: Color(0xFFE8EEE9)),
             ),
           ),
         ),
@@ -234,18 +188,12 @@ class _RegisterPageState extends State<RegisterPage> {
   // BRAND PANEL - DESKTOP
   Widget _brandPanel() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 48,
-        vertical: 42,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 42),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1976D2),
-            Color(0xFF0D47A1),
-          ],
+          colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
         ),
       ),
       child: Stack(
@@ -253,12 +201,12 @@ class _RegisterPageState extends State<RegisterPage> {
           Positioned(
             right: -100,
             top: -90,
-            child: _circle(270, Colors.white.withOpacity(0.06)),
+            child: _circle(270, Colors.white.withValues(alpha: 0.06)),
           ),
           Positioned(
             left: -100,
             bottom: -120,
-            child: _circle(300, Colors.white.withOpacity(0.06)),
+            child: _circle(300, Colors.white.withValues(alpha: 0.06)),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,7 +222,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     child: const Icon(
                       Icons.storefront_rounded,
-                      color: brandGreen,
+                      color: theme.brandGreen,
                       size: 27,
                     ),
                   ),
@@ -294,7 +242,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.13),
+                  color: Colors.white.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(28),
                 ),
                 child: const Icon(
@@ -319,7 +267,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 'belanja kebutuhan sekolah yang lebih '
                 'praktis, mudah, dan nyaman.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 15,
                   height: 1.8,
                 ),
@@ -343,7 +291,7 @@ class _RegisterPageState extends State<RegisterPage> {
               Text(
                 'Belanja cerdas, aktivitas lebih praktis.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.75),
+                  color: Colors.white.withValues(alpha: 0.75),
                   fontSize: 12,
                 ),
               ),
@@ -358,10 +306,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 
@@ -373,10 +318,7 @@ class _RegisterPageState extends State<RegisterPage> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
           ),
         ),
       ],
@@ -392,33 +334,30 @@ class _RegisterPageState extends State<RegisterPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Align(
-            alignment: Alignment.centerLeft,
-             child: IconButton(
-             onPressed: isLoading ? null : _backToLogin,
-             tooltip: 'Kembali ke Login',
-             icon: const Icon(
-              Icons.arrow_back_rounded,
-              size: 25,
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                onPressed: isLoading ? null : _backToLogin,
+                tooltip: 'Kembali ke Login',
+                icon: const Icon(Icons.arrow_back_rounded, size: 25),
+                style: IconButton.styleFrom(
+                  foregroundColor: theme.brandGreen,
+                  backgroundColor: theme.paleGreen,
+                ),
+              ),
             ),
-    style: IconButton.styleFrom(
-      foregroundColor: brandGreen,
-      backgroundColor: paleGreen,
-    ),
-  ),
-),
-const SizedBox(height: 8),
+            const SizedBox(height: 8),
             if (compact) ...[
               Center(
                 child: Container(
                   width: 66,
                   height: 66,
                   decoration: BoxDecoration(
-                    color: paleGreen,
+                    color: theme.paleGreen,
                     borderRadius: BorderRadius.circular(22),
                   ),
                   child: const Icon(
                     Icons.person_add_alt_1_rounded,
-                    color: brandGreen,
+                    color: theme.brandGreen,
                     size: 34,
                   ),
                 ),
@@ -431,7 +370,7 @@ const SizedBox(height: 8),
                 fontSize: 29,
                 height: 1.25,
                 fontWeight: FontWeight.bold,
-                color: textDark,
+                color: theme.textDark,
               ),
             ),
             const SizedBox(height: 10),
@@ -441,7 +380,7 @@ const SizedBox(height: 8),
               style: TextStyle(
                 fontSize: 14,
                 height: 1.6,
-                color: textMuted,
+                color: theme.textMuted,
               ),
             ),
             const SizedBox(height: 28),
@@ -484,7 +423,7 @@ const SizedBox(height: 8),
                   obscurePassword
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: textMuted,
+                  color: theme.textMuted,
                   size: 20,
                 ),
               ),
@@ -507,15 +446,14 @@ const SizedBox(height: 8),
                     ? null
                     : () {
                         setState(() {
-                          obscureConfirmPassword =
-                              !obscureConfirmPassword;
+                          obscureConfirmPassword = !obscureConfirmPassword;
                         });
                       },
                 icon: Icon(
                   obscureConfirmPassword
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: textMuted,
+                  color: theme.textMuted,
                   size: 20,
                 ),
               ),
@@ -537,7 +475,7 @@ const SizedBox(height: 8),
               children: [
                 const Icon(
                   Icons.shield_outlined,
-                  color: brandGreen,
+                  color: theme.brandGreen,
                   size: 18,
                 ),
                 const SizedBox(width: 9),
@@ -562,10 +500,11 @@ const SizedBox(height: 8),
               child: ElevatedButton(
                 onPressed: isLoading ? null : _register,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: brandGreen,
+                  backgroundColor: theme.brandGreen,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor:
-                      brandGreen.withOpacity(0.6),
+                  disabledBackgroundColor: theme.brandGreen.withValues(
+                    alpha: 0.6,
+                  ),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(13),
@@ -605,7 +544,7 @@ const SizedBox(height: 8),
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: pageBackground,
+      backgroundColor: theme.pageBackground,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -624,7 +563,7 @@ const SizedBox(height: 8),
                   Expanded(
                     flex: 6,
                     child: Container(
-                      color: pageBackground,
+                      color: theme.pageBackground,
                       height: double.infinity,
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(
@@ -656,10 +595,7 @@ const SizedBox(height: 8),
                   const SizedBox(height: 20),
                   Text(
                     'Student Mart • Belanja lebih praktis',
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
                   ),
                 ],
               ),

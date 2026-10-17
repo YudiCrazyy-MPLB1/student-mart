@@ -6,12 +6,10 @@ class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
 
   @override
-  State<ForgotPasswordPage> createState() =>
-      _ForgotPasswordPageState();
+  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-class _ForgotPasswordPageState
-    extends State<ForgotPasswordPage> {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
 
@@ -35,9 +33,7 @@ class _ForgotPasswordPageState
     });
 
     try {
-      await ApiService.forgotPassword(
-        _emailController.text,
-      );
+      await ApiService.forgotPassword(_emailController.text);
 
       if (!mounted) return;
 
@@ -45,9 +41,7 @@ class _ForgotPasswordPageState
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: const Text(
-              'Periksa Email',
-            ),
+            title: const Text('Periksa Email'),
             content: const Text(
               'Jika email tersebut terdaftar, '
               'link reset password telah dikirim. '
@@ -72,14 +66,7 @@ class _ForgotPasswordPageState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            ),
-          ),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     } finally {
       if (!mounted) return;
@@ -93,38 +80,25 @@ class _ForgotPasswordPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Lupa Password',
-        ),
-      ),
+      appBar: AppBar(title: const Text('Lupa Password')),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 450,
-          ),
+          constraints: const BoxConstraints(maxWidth: 450),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    Icons.lock_reset,
-                    size: 72,
-                  ),
+                  const Icon(Icons.lock_reset, size: 72),
 
                   const SizedBox(height: 24),
 
                   const Text(
                     'Lupa Password?',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
@@ -140,26 +114,22 @@ class _ForgotPasswordPageState
 
                   TextFormField(
                     controller: _emailController,
-                    keyboardType:
-                        TextInputType.emailAddress,
+                    keyboardType: TextInputType.emailAddress,
                     enabled: !_isLoading,
                     decoration: const InputDecoration(
                       labelText: 'Email',
-                      prefixIcon:
-                          Icon(Icons.email_outlined),
+                      prefixIcon: Icon(Icons.email_outlined),
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
-                      final email =
-                          value?.trim() ?? '';
+                      final email = value?.trim() ?? '';
 
                       if (email.isEmpty) {
                         return 'Email wajib diisi.';
                       }
 
-                      if (!RegExp(
-                        r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                      ).hasMatch(email)) {
+                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                          .hasMatch(email)) {
                         return 'Format email tidak valid.';
                       }
 
@@ -172,21 +142,14 @@ class _ForgotPasswordPageState
                   SizedBox(
                     height: 52,
                     child: FilledButton(
-                      onPressed: _isLoading
-                          ? null
-                          : _sendResetLink,
+                      onPressed: _isLoading ? null : _sendResetLink,
                       child: _isLoading
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text(
-                              'Kirim Link Reset',
-                            ),
+                          : const Text('Kirim Link Reset'),
                     ),
                   ),
                 ],

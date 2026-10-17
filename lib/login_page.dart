@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,10 +5,8 @@ import 'api_service.dart';
 import 'manager_dashboard_page.dart';
 import 'home_page.dart';
 import 'register_page.dart';
-
-const Color brandGreen = Color.fromARGB(255, 27, 177, 164);
-const Color darkGreen = Color.fromARGB(255, 16, 80, 91);
-const Color pageBackground = Color(0xFFF6F8F6);
+import 'sapaan_random.dart';
+import 'theme.dart' as theme;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,11 +16,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController =
-      TextEditingController();
+  final TextEditingController emailController = TextEditingController();
 
-  final TextEditingController passwordController =
-      TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   bool obscurePassword = true;
   bool isLoading = false;
@@ -57,10 +52,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     try {
-      final data = await ApiService.login(
-        email: email,
-        password: password,
-      );
+      final data = await ApiService.login(email: email, password: password);
 
       if (!mounted) return;
 
@@ -73,32 +65,25 @@ class _LoginPageState extends State<LoginPage> {
 
       if (userData is Map) {
         userName = userData['name']?.toString() ?? 'Pengguna';
-        role = userData['role']?.toString().toLowerCase() ??
-            'student';
+        role = userData['role']?.toString().toLowerCase() ?? 'student';
       }
 
       _showMessage('Selamat datang, $userName!');
 
-      await Future<void>.delayed(
-        const Duration(milliseconds: 150),
-      );
+      await Future<void>.delayed(const Duration(milliseconds: 150));
 
       if (!mounted) return;
 
       if (role == 'manager') {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => const ManagerDashboardPage(),
-          ),
+          MaterialPageRoute(builder: (_) => const ManagerDashboardPage()),
           (route) => false,
         );
       } else {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => const HomePage(),
-          ),
+          MaterialPageRoute(builder: (_) => const HomePage()),
           (route) => false,
         );
       }
@@ -119,10 +104,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _showMessage(
-    String message, {
-    bool isError = false,
-  }) {
+  void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context)
@@ -131,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(
           content: Text(message),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: isError ? Colors.red.shade700 : brandGreen,
+          backgroundColor: isError ? Colors.red.shade700 : theme.brandGreen,
         ),
       );
   }
@@ -141,9 +123,7 @@ class _LoginPageState extends State<LoginPage> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const RegisterPage(),
-      ),
+      MaterialPageRoute(builder: (_) => const RegisterPage()),
     );
   }
 
@@ -164,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Icon(
             Icons.shopping_bag_rounded,
             size: iconSize * 0.58,
-            color: brandGreen,
+            color: theme.brandGreen,
           ),
         ),
         const SizedBox(width: 12),
@@ -177,7 +157,7 @@ class _LoginPageState extends State<LoginPage> {
                 fontSize: large ? 25 : 21,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.8,
-                color: large ? Colors.white : darkGreen,
+                color: large ? Colors.white : theme.darkGreen,
               ),
             ),
             if (large)
@@ -198,29 +178,18 @@ class _LoginPageState extends State<LoginPage> {
   // PANEL BRANDING UNTUK DESKTOP
   Widget _brandPanel() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 48,
-        vertical: 42,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 42),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [brandGreen, darkGreen],
+          colors: [theme.brandGreen, theme.darkGreen],
         ),
       ),
       child: Stack(
         children: [
-          Positioned(
-            top: -50,
-            right: -80,
-            child: _decorationCircle(260),
-          ),
-          Positioned(
-            bottom: -100,
-            left: -90,
-            child: _decorationCircle(300),
-          ),
+          Positioned(top: -50, right: -80, child: _decorationCircle(260)),
+          Positioned(bottom: -100, left: -90, child: _decorationCircle(300)),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -261,15 +230,9 @@ class _LoginPageState extends State<LoginPage> {
                 'Kebutuhan sekolah dalam satu tempat',
               ),
               const SizedBox(height: 17),
-              _featureRow(
-                Icons.schedule_rounded,
-                'Pemesanan lebih praktis',
-              ),
+              _featureRow(Icons.schedule_rounded, 'Pemesanan lebih praktis'),
               const SizedBox(height: 17),
-              _featureRow(
-                Icons.verified_user_outlined,
-                'Akses akun yang aman',
-              ),
+              _featureRow(Icons.verified_user_outlined, 'Akses akun yang aman'),
               const Spacer(),
               const Text(
                 'STUDENT MART • SMK NEGERI 4 JEMBER',
@@ -293,7 +256,7 @@ class _LoginPageState extends State<LoginPage> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
           width: 35,
         ),
       ),
@@ -308,10 +271,7 @@ class _LoginPageState extends State<LoginPage> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
         ),
       ],
@@ -350,21 +310,11 @@ class _LoginPageState extends State<LoginPage> {
           textInputAction: action,
           autofillHints: autofillHints,
           onSubmitted: (_) => onSubmitted?.call(),
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF26352D),
-          ),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF26352D)),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-              color: Color(0xFF9AA69F),
-              fontSize: 13,
-            ),
-            prefixIcon: Icon(
-              icon,
-              size: 20,
-              color: const Color(0xFF829188),
-            ),
+            hintStyle: const TextStyle(color: Color(0xFF9AA69F), fontSize: 13),
+            prefixIcon: Icon(icon, size: 20, color: const Color(0xFF829188)),
             suffixIcon: isPassword
                 ? IconButton(
                     tooltip: obscurePassword
@@ -394,28 +344,19 @@ class _LoginPageState extends State<LoginPage> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                color: Color(0xFFE1E8E2),
-              ),
+              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                color: Color(0xFFE1E8E2),
-              ),
+              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                color: brandGreen,
-                width: 1.5,
-              ),
+              borderSide: const BorderSide(color: theme.brandGreen, width: 1.5),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                color: Color(0xFFE1E8E2),
-              ),
+              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
             ),
           ),
         ),
@@ -476,7 +417,7 @@ class _LoginPageState extends State<LoginPage> {
 
               _inputField(
                 label: 'Password',
-                hint: 'Passwordexample123',
+                hint: PasswordHintRandomAwoawkaoakw.generate(),
                 controller: passwordController,
                 icon: Icons.lock_outline_rounded,
                 isPassword: true,
@@ -499,7 +440,10 @@ class _LoginPageState extends State<LoginPage> {
               // --- PINDAHKAN KESINI (DI LUAR LOGO) ---
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(6),
@@ -523,8 +467,9 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 28, 159, 177),
-                    disabledBackgroundColor:
-                        brandGreen.withOpacity(0.6),
+                    disabledBackgroundColor: theme.brandGreen.withValues(
+                      alpha: 0.6,
+                    ),
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -564,20 +509,14 @@ class _LoginPageState extends State<LoginPage> {
                   const Flexible(
                     child: Text(
                       'Belum punya akun?',
-                      style: TextStyle(
-                        color: Color(0xFF78857C),
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: Color(0xFF78857C), fontSize: 13),
                     ),
                   ),
                   TextButton(
-                    onPressed:
-                        isLoading ? null : _openRegisterPage,
+                    onPressed: isLoading ? null : _openRegisterPage,
                     style: TextButton.styleFrom(
-                      foregroundColor: brandGreen,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                      ),
+                      foregroundColor: theme.brandGreen,
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
                     ),
                     child: const Text(
                       'Daftar',
@@ -611,7 +550,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: pageBackground,
+      backgroundColor: theme.pageBackground,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -620,10 +559,7 @@ class _LoginPageState extends State<LoginPage> {
             if (desktop) {
               return Row(
                 children: [
-                  Expanded(
-                    flex: 11,
-                    child: _brandPanel(),
-                  ),
+                  Expanded(flex: 11, child: _brandPanel()),
                   Expanded(
                     flex: 10,
                     child: Container(

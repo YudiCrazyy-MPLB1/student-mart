@@ -6,9 +6,7 @@ class TosReadDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text(
         'Syarat & Ketentuan Konsinyasi',
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
@@ -58,7 +56,10 @@ Admin berhak menolak barang titipan jika dinilai tidak layak jual, melanggar atu
           onPressed: () {
             Navigator.pop(context); // Tutup dialog
           },
-          child: const Text('Tutup', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: const Text(
+            'Tutup',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );

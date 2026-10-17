@@ -41,9 +41,7 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
       debugPrint('AUTH CHECK: mengecek token ke /me');
 
       // Cek token ke Laravel
-      await ApiService.getMe().timeout(
-        const Duration(seconds: 5),
-      );
+      await ApiService.getMe().timeout(const Duration(seconds: 5));
 
       debugPrint('AUTH CHECK: token valid');
 
@@ -72,11 +70,8 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
   void _openLogin() {
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const LoginPage(),
-      ),
-    );
+    Navigator.of(context)
+        .pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
   }
 
   void _routeUser() {
@@ -87,15 +82,12 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           // Ganti dengan halaman dashboard manager utama Anda
-          builder: (_) => const ManagerDashboardPage(), 
+          builder: (_) => const ManagerDashboardPage(),
         ),
       );
     } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const HomePage(),
-        ),
-      );
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     }
   }
 
@@ -106,25 +98,17 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.shopping_cart_rounded,
-              size: 80,
-            ),
+            Icon(Icons.shopping_cart_rounded, size: 80),
             SizedBox(height: 20),
             Text(
               'STUDENT MART',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
             SizedBox(
               width: 45,
               height: 45,
-              child: CircularProgressIndicator(
-                strokeWidth: 4,
-              ),
+              child: CircularProgressIndicator(strokeWidth: 4),
             ),
             SizedBox(height: 15),
             Text('Memeriksa sesi login...'),

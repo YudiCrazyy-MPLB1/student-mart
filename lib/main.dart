@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'api_service.dart';
 import 'auth_check_page.dart';
 import 'home_page.dart';
 import 'manager_dashboard_page.dart';
+import 'cart_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,7 +13,12 @@ Future<void> main() async {
   // Tidak melakukan request ke Laravel.
   await ApiService.loadToken();
 
-  runApp(const StudentMartApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => CartController(),
+      child: const StudentMartApp(),
+    ),
+  );
 }
 
 class StudentMartApp extends StatelessWidget {
@@ -22,10 +29,7 @@ class StudentMartApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Student Mart',
-      theme: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-      ),
+      theme: ThemeData(useMaterial3: true, fontFamily: 'Roboto'),
       home: const RoleCheckPage(),
     );
   }
@@ -37,8 +41,7 @@ class RoleCheckPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Tidak ada token.
-    if (ApiService.authToken == null ||
-        ApiService.authToken!.isEmpty) {
+    if (ApiService.authToken == null || ApiService.authToken!.isEmpty) {
       return const AuthCheckPage();
     }
 

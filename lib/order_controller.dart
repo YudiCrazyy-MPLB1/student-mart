@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import 'order_model.dart';
 
 class OrderController extends ChangeNotifier {
@@ -12,9 +13,7 @@ class OrderController extends ChangeNotifier {
   }
 
   void updateStatus(String orderId, String status) {
-    final index = _orders.indexWhere(
-      (order) => order.id == orderId,
-    );
+    final index = _orders.indexWhere((order) => order.id == orderId);
 
     if (index == -1) return;
 

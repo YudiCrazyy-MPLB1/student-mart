@@ -1,14 +1,12 @@
 import 'package:flutter/foundation.dart';
+
 import 'product_model.dart';
 
 class CartItem {
   final Product product;
   int quantity;
 
-  CartItem({
-    required this.product,
-    this.quantity = 1,
-  });
+  CartItem({required this.product, this.quantity = 1});
 
   int get subtotal => product.price * quantity;
 }
@@ -19,24 +17,16 @@ class CartController extends ChangeNotifier {
   List<CartItem> get items => List.unmodifiable(_items);
 
   int get itemCount {
-    return _items.fold(
-      0,
-      (total, item) => total + item.quantity,
-    );
+    return _items.fold(0, (total, item) => total + item.quantity);
   }
 
   int get total {
-    return _items.fold(
-      0,
-      (total, item) => total + item.subtotal,
-    );
+    return _items.fold(0, (total, item) => total + item.subtotal);
   }
 
   CartItem? getItem(Product product) {
     try {
-      return _items.firstWhere(
-        (item) => item.product.id == product.id,
-      );
+      return _items.firstWhere((item) => item.product.id == product.id);
     } catch (_) {
       return null;
     }
@@ -54,12 +44,7 @@ class CartController extends ChangeNotifier {
         existingItem.quantity++;
       }
     } else {
-      _items.add(
-        CartItem(
-          product: product,
-          quantity: 1,
-        ),
-      );
+      _items.add(CartItem(product: product, quantity: 1));
     }
 
     notifyListeners();
@@ -82,9 +67,7 @@ class CartController extends ChangeNotifier {
   }
 
   void removeFromCart(Product product) {
-    _items.removeWhere(
-      (item) => item.product.id == product.id,
-    );
+    _items.removeWhere((item) => item.product.id == product.id);
 
     notifyListeners();
   }
@@ -94,5 +77,3 @@ class CartController extends ChangeNotifier {
     notifyListeners();
   }
 }
-
-final cartController = CartController();

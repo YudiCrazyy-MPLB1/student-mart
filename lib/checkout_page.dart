@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'cart_controller.dart';
 import 'api_service.dart';
 
@@ -16,14 +18,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool isProcessing = false;
 
   String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (match) => '${match[1]}.',
-    )}';
+    return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
   }
 
   Future<void> createOrder() async {
-    if (cartController.items.isEmpty) {
+    final cart = context.read<CartController>();
+    if (cart.items.isEmpty) {
       return;
     }
 
@@ -32,11 +32,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
 
     try {
-      final items = cartController.items.map((item) {
-        return {
-          'product_id': item.product.id,
-          'quantity': item.quantity,
-        };
+      final items = cart.items.map((item) {
+        return {'product_id': item.product.id, 'quantity': item.quantity};
       }).toList();
 
       final orderData = await ApiService.createOrder(
@@ -47,7 +44,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       if (!mounted) return;
 
-      cartController.clearCart();
+      cart.clearCart();
 
       setState(() {
         isProcessing = false;
@@ -58,9 +55,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         barrierDismissible: false,
         builder: (context) {
           return AlertDialog(
-            title: const Text(
-              'Pesanan Berhasil 🎉',
-            ),
+            title: const Text('Pesanan Berhasil 🎉'),
             content: Text(
               'Pesanan ${orderData['order_number']} '
               'berhasil dibuat.',
@@ -77,8 +72,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           );
         },
       );
-    } 
-    catch (e) {
+    } catch (e) {
       if (!mounted) return;
 
       setState(() {
@@ -87,7 +81,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       final errorText = e.toString();
 
-      if (errorText.contains('401') || errorText.toLowerCase().contains('unauthorized')) {
+      if (errorText.contains('401') ||
+          errorText.toLowerCase().contains('unauthorized')) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Sesi telah habis. Silakan login kembali.'),
@@ -96,10 +91,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
         );
         // Tendang ke halaman login
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-        return; 
+        return;
       }
 
-      if (errorText.contains('422') || errorText.toLowerCase().contains('stok')) {
+      if (errorText.contains('422') ||
+          errorText.toLowerCase().contains('stok')) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             // Menampilkan pesan asli dari Laravel ("Stok Mie Ayam tidak mencukupi...")
@@ -108,11 +104,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
             duration: const Duration(seconds: 4),
           ),
         );
-        
+
         // (Opsional) Jika ingin me-refresh keranjang otomatis saat stok habis:
-        // cartController.clearCart(); 
-        
-        return; 
+        // cartController.clearCart();
+
+        return;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -128,28 +124,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    final items = cartController.items;
-    final total = cartController.total;
+    final items = context.read<CartController>().items;
+    final total = context.read<CartController>().total;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Checkout',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
 
       body: items.isEmpty
-          ? const Center(
-              child: Text('Keranjang kosong'),
-            )
+          ? const Center(child: Text('Keranjang kosong'))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // =========================
                   // PESANAN
@@ -157,10 +148,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
                   const Text(
                     'Pesanan Kamu',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
@@ -169,33 +157,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: items.map((item) {
                         return Padding(
-                          padding:
-                              const EdgeInsets.only(
-                            bottom: 14,
-                          ),
+                          padding: const EdgeInsets.only(bottom: 14),
                           child: Row(
                             children: [
                               Container(
                                 width: 55,
                                 height: 55,
-                                decoration:
-                                    BoxDecoration(
-                                  color:
-                                      Colors.grey.shade100,
-                                  borderRadius:
-                                      BorderRadius.circular(
-                                    12,
-                                  ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
-                                  Icons
-                                      .shopping_bag_outlined,
+                                  Icons.shopping_bag_outlined,
                                   color: Colors.blue,
                                 ),
                               ),
@@ -204,16 +182,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment
-                                          .start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       item.product.name,
-                                      style:
-                                          const TextStyle(
-                                        fontWeight:
-                                            FontWeight.bold,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
 
@@ -222,8 +196,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     Text(
                                       '${item.quantity} x ${formatRupiah(item.product.price)}',
                                       style: TextStyle(
-                                        color: Colors
-                                            .grey.shade600,
+                                        color: Colors.grey.shade600,
                                       ),
                                     ),
                                   ],
@@ -232,13 +205,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
                               Text(
                                 formatRupiah(
-                                  item.product.price *
-                                      item.quantity,
+                                  item.product.price * item.quantity,
                                 ),
-                                style:
-                                    const TextStyle(
-                                  fontWeight:
-                                      FontWeight.bold,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
@@ -253,13 +223,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   // =========================
                   // PENGAMBILAN
                   // =========================
-
                   const Text(
                     'Metode Pengambilan',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
@@ -267,19 +233,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    
+
                     child: Column(
                       children: [
                         RadioListTile<String>(
-                          value:
-                              'Ambil di Student Mart',
+                          value: 'Ambil di Student Mart',
                           groupValue: pickupMethod,
-                          title: const Text(
-                            'Ambil di Student Mart',
-                          ),
+                          title: const Text('Ambil di Student Mart'),
                           subtitle: const Text(
                             'Ambil pesanan langsung di koperasi',
                           ),
@@ -287,8 +249,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               ? null
                               : (value) {
                                   setState(() {
-                                    pickupMethod =
-                                        value!;
+                                    pickupMethod = value!;
                                   });
                                 },
                         ),
@@ -296,18 +257,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         RadioListTile<String>(
                           value: 'Antar ke Kelas',
                           groupValue: pickupMethod,
-                          title: const Text(
-                            'Antar ke Kelas',
-                          ),
-                          subtitle: const Text(
-                            'Pesanan diantar ke kelas',
-                          ),
+                          title: const Text('Antar ke Kelas'),
+                          subtitle: const Text('Pesanan diantar ke kelas'),
                           onChanged: isProcessing
                               ? null
                               : (value) {
                                   setState(() {
-                                    pickupMethod =
-                                        value!;
+                                    pickupMethod = value!;
                                   });
                                 },
                         ),
@@ -320,13 +276,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   // =========================
                   // PEMBAYARAN
                   // =========================
-
                   const Text(
                     'Metode Pembayaran',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
@@ -334,26 +286,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
                         RadioListTile<String>(
                           value: 'Bayar di Kasir',
                           groupValue: paymentMethod,
-                          title: const Text(
-                            'Bayar di Kasir',
-                          ),
-                          subtitle: const Text(
-                            'Bayar saat mengambil pesanan',
-                          ),
+                          title: const Text('Bayar di Kasir'),
+                          subtitle: const Text('Bayar saat mengambil pesanan'),
                           onChanged: isProcessing
                               ? null
                               : (value) {
                                   setState(() {
-                                    paymentMethod =
-                                        value!;
+                                    paymentMethod = value!;
                                   });
                                 },
                         ),
@@ -361,9 +307,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         RadioListTile<String>(
                           value: 'Saldo Siswa',
                           groupValue: paymentMethod,
-                          title: const Text(
-                            'Saldo Siswa',
-                          ),
+                          title: const Text('Saldo Siswa'),
                           subtitle: const Text(
                             'Gunakan saldo akun Student Mart',
                           ),
@@ -371,8 +315,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               ? null
                               : (value) {
                                   setState(() {
-                                    paymentMethod =
-                                        value!;
+                                    paymentMethod = value!;
                                   });
                                 },
                         ),
@@ -385,13 +328,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   // =========================
                   // RINGKASAN
                   // =========================
-
                   const Text(
                     'Ringkasan Pembayaran',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 12),
@@ -400,62 +339,46 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment
-                                  .spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Subtotal'),
-                            Text(
-                              formatRupiah(total),
-                            ),
+                            Text(formatRupiah(total)),
                           ],
                         ),
 
                         const SizedBox(height: 10),
 
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment
-                                  .spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Biaya layanan',
-                            ),
+                            const Text('Biaya layanan'),
                             const Text('Rp0'),
                           ],
                         ),
 
-                        const Divider(
-                          height: 24,
-                        ),
+                        const Divider(height: 24),
 
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment
-                                  .spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               'Total',
                               style: TextStyle(
                                 fontSize: 18,
-                                fontWeight:
-                                    FontWeight.bold,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
 
                             Text(
                               formatRupiah(total),
-                              style:
-                                  const TextStyle(
+                              style: const TextStyle(
                                 fontSize: 20,
-                                fontWeight:
-                                    FontWeight.bold,
+                                fontWeight: FontWeight.bold,
                                 color: Colors.blue,
                               ),
                             ),
@@ -470,30 +393,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   // =========================
                   // BUAT PESANAN
                   // =========================
-
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: isProcessing
-                          ? null
-                          : createOrder,
+                      onPressed: isProcessing ? null : createOrder,
 
                       child: isProcessing
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text(
                               'Buat Pesanan',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight:
-                                    FontWeight.bold,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                     ),

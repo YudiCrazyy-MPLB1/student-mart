@@ -13,12 +13,10 @@ class ManagerDashboardPage extends StatefulWidget {
   const ManagerDashboardPage({super.key});
 
   @override
-  State<ManagerDashboardPage> createState() =>
-      _ManagerDashboardPageState();
+  State<ManagerDashboardPage> createState() => _ManagerDashboardPageState();
 }
 
-class _ManagerDashboardPageState
-    extends State<ManagerDashboardPage> {
+class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   bool _isLoading = true;
   bool _isRefreshing = false;
   String? _errorMessage;
@@ -44,9 +42,7 @@ class _ManagerDashboardPageState
   // LOAD DASHBOARD
   // ============================================================
 
-  Future<void> _loadDashboard({
-    bool refresh = false,
-  }) async {
+  Future<void> _loadDashboard({bool refresh = false}) async {
     if (refresh) {
       if (_isRefreshing) return;
 
@@ -61,17 +57,14 @@ class _ManagerDashboardPageState
     }
 
     try {
-      final response =
-          await ApiService.getManagerDashboard();
+      final response = await ApiService.getManagerDashboard();
 
       final data = response;
 
       final statistics = data['statistics'];
 
       if (statistics is! Map) {
-        throw Exception(
-          'Data statistik dashboard tidak valid.',
-        );
+        throw Exception('Data statistik dashboard tidak valid.');
       }
 
       final recent = data['recent_orders'];
@@ -79,26 +72,19 @@ class _ManagerDashboardPageState
       if (!mounted) return;
 
       setState(() {
-        totalProducts =
-            _toInt(statistics['total_products']);
+        totalProducts = _toInt(statistics['total_products']);
 
-        totalCategories =
-            _toInt(statistics['total_categories']);
+        totalCategories = _toInt(statistics['total_categories']);
 
-        totalOrders =
-            _toInt(statistics['total_orders']);
+        totalOrders = _toInt(statistics['total_orders']);
 
-        pendingOrders =
-            _toInt(statistics['pending_orders']);
+        pendingOrders = _toInt(statistics['pending_orders']);
 
-        lowStockProducts =
-            _toInt(statistics['low_stock_products']);
+        lowStockProducts = _toInt(statistics['low_stock_products']);
 
-        totalSales =
-            _toInt(statistics['total_sales']);
+        totalSales = _toInt(statistics['total_sales']);
 
-        recentOrders =
-            recent is List ? recent : [];
+        recentOrders = recent is List ? recent : [];
 
         _isLoading = false;
         _isRefreshing = false;
@@ -124,10 +110,7 @@ class _ManagerDashboardPageState
       return value.toInt();
     }
 
-    return int.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   String _cleanErrorMessage(dynamic error) {
@@ -151,8 +134,7 @@ class _ManagerDashboardPageState
     final buffer = StringBuffer();
 
     for (int i = 0; i < text.length; i++) {
-      if (i > 0 &&
-          (text.length - i) % 3 == 0) {
+      if (i > 0 && (text.length - i) % 3 == 0) {
         buffer.write('.');
       }
 
@@ -179,9 +161,7 @@ class _ManagerDashboardPageState
         return 'Dibatalkan';
 
       default:
-        return status.isEmpty
-            ? 'Tidak diketahui'
-            : status;
+        return status.isEmpty ? 'Tidak diketahui' : status;
     }
   }
 
@@ -213,97 +193,79 @@ class _ManagerDashboardPageState
   Future<void> _openProducts() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const ManagerProductPage(),
-      ),
+      MaterialPageRoute(builder: (_) => const ManagerProductPage()),
     );
 
     if (!mounted) return;
 
-    await _loadDashboard(
-      refresh: true,
-    );
+    await _loadDashboard(refresh: true);
   }
 
   Future<void> _openOrders() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const ManagerOrderPage(),
-      ),
+      MaterialPageRoute(builder: (_) => const ManagerOrderPage()),
     );
 
     if (!mounted) return;
 
-    await _loadDashboard(
-      refresh: true,
-    );
+    await _loadDashboard(refresh: true);
   }
 
   // ============================================================
   // BUILD
   // ============================================================
 
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Manager Dashboard'),
-      actions: [
-        // LOGOUT
-        IconButton(
-          tooltip: 'Logout',
-          icon: const Icon(Icons.logout),
-          onPressed: () async {
-            await ApiService.logout();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Manager Dashboard'),
+        actions: [
+          // LOGOUT
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await ApiService.logout();
 
-            if (!mounted) return;
+              if (!mounted) return;
 
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const LoginPage(),
-              ),
-              (route) => false,
-            );
-          },
-        ),
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
+            },
+          ),
 
-        // REFRESH
-        IconButton(
-          tooltip: 'Refresh',
-          onPressed: _isLoading || _isRefreshing
-              ? null
-              : () {
-                  _loadDashboard(refresh: true);
-                },
-          icon: _isRefreshing
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Icon(
-                  Icons.refresh_rounded,
-                ),
-        ),
+          // REFRESH
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: _isLoading || _isRefreshing
+                ? null
+                : () {
+                    _loadDashboard(refresh: true);
+                  },
+            icon: _isRefreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh_rounded),
+          ),
 
-        const SizedBox(width: 8),
-      ],
-    ),
-    body: _buildBody(),
-  );
-}
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: _buildBody(),
+    );
+  }
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -311,12 +273,9 @@ Widget build(BuildContext context) {
     }
 
     return RefreshIndicator(
-      onRefresh: () => _loadDashboard(
-        refresh: true,
-      ),
+      onRefresh: () => _loadDashboard(refresh: true),
       child: ListView(
-        physics:
-            const AlwaysScrollableScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
           _buildHeader(),
@@ -351,18 +310,13 @@ Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context)
-                .colorScheme
-                .primaryContainer,
-            Theme.of(context)
-                .colorScheme
-                .secondaryContainer,
+            Theme.of(context).colorScheme.primaryContainer,
+            Theme.of(context).colorScheme.secondaryContainer,
           ],
         ),
       ),
@@ -372,18 +326,14 @@ Widget build(BuildContext context) {
             width: 54,
             height: 54,
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surface
+              color: Theme.of(context).colorScheme.surface
                   .withValues(alpha: 0.9),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.admin_panel_settings_rounded,
               size: 30,
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
 
@@ -391,22 +341,16 @@ Widget build(BuildContext context) {
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _greetingMessage,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 5),
                 Text(
                   'Pantau aktivitas Student Mart dari satu tempat.',
-                  style: TextStyle(
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(fontSize: 13),
                 ),
               ],
             ),
@@ -425,15 +369,10 @@ Widget build(BuildContext context) {
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       child: Container(
-        padding:
-            const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          borderRadius:
-              BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(context)
-                .dividerColor,
-          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Row(
           children: [
@@ -441,18 +380,13 @@ Widget build(BuildContext context) {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
+                color: Theme.of(context).colorScheme.primary
                     .withValues(alpha: 0.1),
-                borderRadius:
-                    BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 Icons.payments_rounded,
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary,
+                color: Theme.of(context).colorScheme.primary,
                 size: 28,
               ),
             ),
@@ -461,22 +395,17 @@ Widget build(BuildContext context) {
 
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     'Total Penjualan',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     _formatRupiah(totalSales),
                     maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -486,10 +415,7 @@ Widget build(BuildContext context) {
               ),
             ),
 
-            const Icon(
-              Icons.trending_up_rounded,
-              size: 28,
-            ),
+            const Icon(Icons.trending_up_rounded, size: 28),
           ],
         ),
       ),
@@ -503,61 +429,46 @@ Widget build(BuildContext context) {
   Widget _buildStatisticsGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide =
-            constraints.maxWidth >= 700;
+        final isWide = constraints.maxWidth >= 700;
 
-        final crossAxisCount =
-            isWide ? 3 : 2;
+        final crossAxisCount = isWide ? 3 : 2;
 
         return GridView.count(
-          crossAxisCount:
-              crossAxisCount,
+          crossAxisCount: crossAxisCount,
           shrinkWrap: true,
-          physics:
-              const NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio:
-              isWide ? 1.8 : 1.45,
+          childAspectRatio: isWide ? 1.8 : 1.45,
           children: [
             _buildStatCard(
               title: 'Produk',
-              value:
-                  totalProducts.toString(),
-              icon:
-                  Icons.inventory_2_rounded,
+              value: totalProducts.toString(),
+              icon: Icons.inventory_2_rounded,
             ),
 
             _buildStatCard(
               title: 'Kategori',
-              value:
-                  totalCategories.toString(),
-              icon:
-                  Icons.category_rounded,
+              value: totalCategories.toString(),
+              icon: Icons.category_rounded,
             ),
 
             _buildStatCard(
               title: 'Pesanan',
-              value:
-                  totalOrders.toString(),
-              icon:
-                  Icons.shopping_bag_rounded,
+              value: totalOrders.toString(),
+              icon: Icons.shopping_bag_rounded,
             ),
 
             _buildStatCard(
               title: 'Menunggu',
-              value:
-                  pendingOrders.toString(),
-              icon:
-                  Icons.pending_actions_rounded,
+              value: pendingOrders.toString(),
+              icon: Icons.pending_actions_rounded,
             ),
 
             _buildStatCard(
               title: 'Stok Menipis',
-              value:
-                  lowStockProducts.toString(),
-              icon:
-                  Icons.warning_amber_rounded,
+              value: lowStockProducts.toString(),
+              icon: Icons.warning_amber_rounded,
             ),
           ],
         );
@@ -573,47 +484,32 @@ Widget build(BuildContext context) {
     return Card(
       elevation: 0,
       child: Padding(
-        padding:
-            const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
+                color: Theme.of(context).colorScheme.primary
                     .withValues(alpha: 0.1),
-                borderRadius:
-                    BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary,
-              ),
+              child: Icon(icon, color: Theme.of(context).colorScheme.primary),
             ),
 
             const SizedBox(width: 12),
 
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     title,
                     maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                    ),
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
                   ),
 
                   const SizedBox(height: 4),
@@ -621,12 +517,10 @@ Widget build(BuildContext context) {
                   Text(
                     value,
                     maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 20,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -644,15 +538,11 @@ Widget build(BuildContext context) {
 
   Widget _buildQuickActions() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Menu Manager',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 6),
@@ -663,10 +553,8 @@ Widget build(BuildContext context) {
             Expanded(
               child: _buildActionCard(
                 title: 'Kelola Produk',
-                subtitle:
-                    'Tambah dan edit produk',
-                icon:
-                    Icons.inventory_2_rounded,
+                subtitle: 'Tambah dan edit produk',
+                icon: Icons.inventory_2_rounded,
                 onTap: _openProducts,
               ),
             ),
@@ -676,34 +564,29 @@ Widget build(BuildContext context) {
             Expanded(
               child: _buildActionCard(
                 title: 'Kelola Pesanan',
-                subtitle:
-                    'Pantau pesanan siswa',
-                icon:
-                    Icons.shopping_bag_rounded,
+                subtitle: 'Pantau pesanan siswa',
+                icon: Icons.shopping_bag_rounded,
                 onTap: _openOrders,
               ),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 6),
-        
+
         // BARIS KEDUA (Inventaris & Verifikasi Konsinyasi)
         Row(
           children: [
             Expanded(
               child: _buildActionCard(
                 title: 'Inventaris',
-                subtitle:
-                    'Pantau inventaris student mart',
-                icon:
-                    Icons.bar_chart_rounded,
+                subtitle: 'Pantau inventaris student mart',
+                icon: Icons.bar_chart_rounded,
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const AccountingDashboardPage(),
+                      builder: (_) => const AccountingDashboardPage(),
                     ),
                   );
                 },
@@ -716,16 +599,13 @@ Widget build(BuildContext context) {
             Expanded(
               child: _buildActionCard(
                 title: 'Verifikasi Barang',
-                subtitle:
-                    'Tinjau konsinyasi siswa',
-                icon:
-                    Icons.fact_check_rounded,
+                subtitle: 'Tinjau konsinyasi siswa',
+                icon: Icons.fact_check_rounded,
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const ManagerVerificationPage(),
+                      builder: (_) => const ManagerVerificationPage(),
                     ),
                   );
                 },
@@ -734,21 +614,19 @@ Widget build(BuildContext context) {
 
             const SizedBox(width: 6),
 
-            Expanded(child: _buildActionCard(
-              title: 'Iklan',
-              subtitle:
-                  'Kelola iklan promosi',
-              icon: Icons.campaign_rounded,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const ManagerAdsPage(),
-                  ),
-                );
-              },
-            )),
+            Expanded(
+              child: _buildActionCard(
+                title: 'Iklan',
+                subtitle: 'Kelola iklan promosi',
+                icon: Icons.campaign_rounded,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ManagerAdsPage()),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ],
@@ -767,29 +645,19 @@ Widget build(BuildContext context) {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding:
-              const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
+                  color: Theme.of(context).colorScheme.primary
                       .withValues(alpha: 0.1),
-                  borderRadius:
-                      BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(13),
                 ),
-                child: Icon(
-                  icon,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary,
-                ),
+                child: Icon(icon, color: Theme.of(context).colorScheme.primary),
               ),
 
               const SizedBox(height: 14),
@@ -797,8 +665,7 @@ Widget build(BuildContext context) {
               Text(
                 title,
                 maxLines: 1,
-                overflow:
-                    TextOverflow.ellipsis,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -810,38 +677,27 @@ Widget build(BuildContext context) {
               Text(
                 subtitle,
                 maxLines: 2,
-                overflow:
-                    TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
 
               const SizedBox(height: 12),
 
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
                     'Buka',
                     style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary,
-                      fontWeight:
-                          FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(
-                    Icons
-                        .arrow_forward_rounded,
+                    Icons.arrow_forward_rounded,
                     size: 18,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ],
               ),
@@ -858,26 +714,21 @@ Widget build(BuildContext context) {
 
   Widget _buildRecentOrders() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             const Expanded(
               child: Text(
                 'Pesanan Terbaru',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
 
             if (recentOrders.isNotEmpty)
               TextButton(
                 onPressed: _openOrders,
-                child:
-                    const Text('Lihat Semua'),
+                child: const Text('Lihat Semua'),
               ),
           ],
         ),
@@ -887,14 +738,7 @@ Widget build(BuildContext context) {
         if (recentOrders.isEmpty)
           _buildEmptyOrders()
         else
-          ...recentOrders
-              .take(5)
-              .map(
-                (order) =>
-                    _buildRecentOrderCard(
-                  order,
-                ),
-              ),
+          ...recentOrders.take(5).map((order) => _buildRecentOrderCard(order)),
       ],
     );
   }
@@ -903,11 +747,7 @@ Widget build(BuildContext context) {
     return Card(
       elevation: 0,
       child: Padding(
-        padding:
-            const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 32,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
         child: Column(
           children: [
             Icon(
@@ -920,10 +760,7 @@ Widget build(BuildContext context) {
 
             const Text(
               'Belum ada pesanan',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
 
             const SizedBox(height: 5),
@@ -931,9 +768,7 @@ Widget build(BuildContext context) {
             const Text(
               'Pesanan baru akan muncul di sini.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -941,85 +776,56 @@ Widget build(BuildContext context) {
     );
   }
 
-  Widget _buildRecentOrderCard(
-    dynamic order,
-  ) {
+  Widget _buildRecentOrderCard(dynamic order) {
     if (order is! Map) {
       return const SizedBox.shrink();
     }
 
     final user = order['user'];
 
-    final orderNumber =
-        order['order_number']
-                ?.toString() ??
-            'Pesanan';
+    final orderNumber = order['order_number']?.toString() ?? 'Pesanan';
 
-    final customerName =
-        user is Map
-            ? user['name']?.toString() ??
-                'Pengguna'
-            : 'Pengguna';
+    final customerName = user is Map
+        ? user['name']?.toString() ?? 'Pengguna'
+        : 'Pengguna';
 
-    final total =
-        _toInt(order['total']);
+    final total = _toInt(order['total']);
 
-    final status =
-        order['status']?.toString() ??
-            'unknown';
+    final status = order['status']?.toString() ?? 'unknown';
 
-    final color =
-        _statusColor(status);
+    final color = _statusColor(status);
 
     return Card(
       elevation: 0,
-      margin:
-          const EdgeInsets.only(
-        bottom: 10,
-      ),
+      margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
-        borderRadius:
-            BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12),
         onTap: _openOrders,
         child: Padding(
-          padding:
-              const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(14),
           child: Row(
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: color.withValues(
-                    alpha: 0.1,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    12,
-                  ),
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.receipt_long_rounded,
-                  color: color,
-                ),
+                child: Icon(Icons.receipt_long_rounded, color: color),
               ),
 
               const SizedBox(width: 12),
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       orderNumber,
                       maxLines: 1,
-                      overflow:
-                          TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
 
                     const SizedBox(height: 4),
@@ -1027,22 +833,15 @@ Widget build(BuildContext context) {
                     Text(
                       customerName,
                       maxLines: 1,
-                      overflow:
-                          TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                      ),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
                     ),
 
                     const SizedBox(height: 4),
 
                     Text(
                       _formatRupiah(total),
-                      style: const TextStyle(
-                        fontWeight:
-                            FontWeight.w600,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -1062,23 +861,14 @@ Widget build(BuildContext context) {
   // STATUS BADGE
   // ============================================================
 
-  Widget _buildStatusBadge(
-    String status,
-  ) {
-    final color =
-        _statusColor(status);
+  Widget _buildStatusBadge(String status) {
+    final color = _statusColor(status);
 
     return Container(
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color:
-            color.withValues(alpha: 0.1),
-        borderRadius:
-            BorderRadius.circular(20),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         _formatStatus(status),
@@ -1098,23 +888,19 @@ Widget build(BuildContext context) {
   Widget _buildErrorState() {
     return Center(
       child: Padding(
-        padding:
-            const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: Colors.red
-                    .withValues(alpha: 0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons
-                    .cloud_off_rounded,
+                Icons.cloud_off_rounded,
                 color: Colors.red,
                 size: 36,
               ),
@@ -1124,25 +910,16 @@ Widget build(BuildContext context) {
 
             const Text(
               'Gagal memuat dashboard',
-              textAlign:
-                  TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight:
-                    FontWeight.bold,
-              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 8),
 
             Text(
-              _errorMessage ??
-                  'Terjadi kesalahan.',
-              textAlign:
-                  TextAlign.center,
-              style: const TextStyle(
-                color: Colors.grey,
-              ),
+              _errorMessage ?? 'Terjadi kesalahan.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
             ),
 
             const SizedBox(height: 20),
@@ -1151,16 +928,12 @@ Widget build(BuildContext context) {
               onPressed: () {
                 _loadDashboard();
               },
-              icon: const Icon(
-                Icons.refresh_rounded,
-              ),
-              label:
-                  const Text('Coba Lagi'),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Coba Lagi'),
             ),
           ],
         ),
       ),
     );
   }
-
 }

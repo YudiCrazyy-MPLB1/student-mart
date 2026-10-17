@@ -6,12 +6,10 @@ class InventoryMovementPage extends StatefulWidget {
   const InventoryMovementPage({super.key});
 
   @override
-  State<InventoryMovementPage> createState() =>
-      _InventoryMovementPageState();
+  State<InventoryMovementPage> createState() => _InventoryMovementPageState();
 }
 
-class _InventoryMovementPageState
-    extends State<InventoryMovementPage> {
+class _InventoryMovementPageState extends State<InventoryMovementPage> {
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -20,30 +18,12 @@ class _InventoryMovementPageState
   String? _selectedType;
 
   final List<Map<String, String?>> _filters = [
-    {
-      'label': 'Semua',
-      'value': null,
-    },
-    {
-      'label': 'Stok Masuk',
-      'value': 'in',
-    },
-    {
-      'label': 'Penjualan',
-      'value': 'sale',
-    },
-    {
-      'label': 'Stok Keluar',
-      'value': 'out',
-    },
-    {
-      'label': 'Barang Rusak',
-      'value': 'damage',
-    },
-    {
-      'label': 'Penyesuaian',
-      'value': 'adjustment',
-    },
+    {'label': 'Semua', 'value': null},
+    {'label': 'Stok Masuk', 'value': 'in'},
+    {'label': 'Penjualan', 'value': 'sale'},
+    {'label': 'Stok Keluar', 'value': 'out'},
+    {'label': 'Barang Rusak', 'value': 'damage'},
+    {'label': 'Penyesuaian', 'value': 'adjustment'},
   ];
 
   @override
@@ -59,8 +39,7 @@ class _InventoryMovementPageState
     });
 
     try {
-      final result =
-          await ApiService.getInventoryMovements(
+      final result = await ApiService.getInventoryMovements(
         type: _selectedType,
       );
 
@@ -87,10 +66,7 @@ class _InventoryMovementPageState
       return value.toInt();
     }
 
-    return int.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   String _typeLabel(String type) {
@@ -171,16 +147,13 @@ class _InventoryMovementPageState
   String _formatDate(dynamic value) {
     if (value == null) return '-';
 
-    final date = DateTime.tryParse(
-      value.toString(),
-    );
+    final date = DateTime.tryParse(value.toString());
 
     if (date == null) return value.toString();
 
     final local = date.toLocal();
 
-    String two(int number) =>
-        number.toString().padLeft(2, '0');
+    String two(int number) => number.toString().padLeft(2, '0');
 
     return '${two(local.day)}/${two(local.month)}/${local.year} '
         '${two(local.hour)}:${two(local.minute)}';
@@ -190,8 +163,7 @@ class _InventoryMovementPageState
     final product = movement['product'];
 
     if (product is Map) {
-      return product['name']?.toString() ??
-          'Produk #${movement['product_id']}';
+      return product['name']?.toString() ?? 'Produk #${movement['product_id']}';
     }
 
     return 'Produk #${movement['product_id']}';
@@ -213,17 +185,12 @@ class _InventoryMovementPageState
       child: Row(
         children: _filters.map((filter) {
           final value = filter['value'];
-          final selected =
-              _selectedType == value;
+          final selected = _selectedType == value;
 
           return Padding(
-            padding: const EdgeInsets.only(
-              right: 8,
-            ),
+            padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text(
-                filter['label'] ?? '',
-              ),
+              label: Text(filter['label'] ?? ''),
               selected: selected,
               onSelected: (_) {
                 setState(() {
@@ -239,59 +206,43 @@ class _InventoryMovementPageState
     );
   }
 
-  Widget _buildMovementCard(
-    Map<String, dynamic> movement,
-  ) {
-    final type =
-        movement['type']?.toString() ?? '';
+  Widget _buildMovementCard(Map<String, dynamic> movement) {
+    final type = movement['type']?.toString() ?? '';
 
-    final quantity =
-        _toInt(movement['quantity']);
+    final quantity = _toInt(movement['quantity']);
 
-    final stockBefore =
-        _toInt(movement['stock_before']);
+    final stockBefore = _toInt(movement['stock_before']);
 
-    final stockAfter =
-        _toInt(movement['stock_after']);
+    final stockAfter = _toInt(movement['stock_after']);
 
     final color = _typeColor(type);
 
-    final note =
-        movement['note']?.toString();
+    final note = movement['note']?.toString();
 
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 10,
-      ),
+      margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor:
-                      color.withValues(alpha: 0.12),
-                  child: Icon(
-                    _typeIcon(type),
-                    color: color,
-                  ),
+                  backgroundColor: color.withValues(alpha: 0.12),
+                  child: Icon(_typeIcon(type), color: color),
                 ),
 
                 const SizedBox(width: 12),
 
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _productName(movement),
                         style: const TextStyle(
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
@@ -302,8 +253,7 @@ class _InventoryMovementPageState
                         _typeLabel(type),
                         style: TextStyle(
                           color: color,
-                          fontWeight:
-                              FontWeight.w600,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -314,13 +264,12 @@ class _InventoryMovementPageState
                   type == 'in'
                       ? '+$quantity'
                       : type == 'return'
-                          ? '+$quantity'
-                          : '-$quantity',
+                      ? '+$quantity'
+                      : '-$quantity',
                   style: TextStyle(
                     color: color,
                     fontSize: 20,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
@@ -337,20 +286,14 @@ class _InventoryMovementPageState
                 Expanded(
                   child: Text(
                     'Stok sebelum\n$stockBefore',
-                    style: TextStyle(
-                      color:
-                          Colors.grey.shade700,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade700),
                   ),
                 ),
 
                 Expanded(
                   child: Text(
                     'Stok sesudah\n$stockAfter',
-                    style: const TextStyle(
-                      fontWeight:
-                          FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -358,51 +301,31 @@ class _InventoryMovementPageState
 
             const SizedBox(height: 8),
 
-            if (note != null &&
-                note.trim().isNotEmpty)
+            if (note != null && note.trim().isNotEmpty)
               Padding(
-                padding:
-                    const EdgeInsets.only(
-                  bottom: 8,
-                ),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   '📝 $note',
-                  style: TextStyle(
-                    color:
-                        Colors.grey.shade700,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade700),
                 ),
               ),
 
             Row(
               children: [
-                const Icon(
-                  Icons.person_outline,
-                  size: 16,
-                ),
+                const Icon(Icons.person_outline, size: 16),
 
                 const SizedBox(width: 5),
 
                 Expanded(
                   child: Text(
                     _userName(movement),
-                    style: TextStyle(
-                      color:
-                          Colors.grey.shade700,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
                   ),
                 ),
 
                 Text(
-                  _formatDate(
-                    movement['created_at'],
-                  ),
-                  style: TextStyle(
-                    color:
-                        Colors.grey.shade600,
-                    fontSize: 12,
-                  ),
+                  _formatDate(movement['created_at']),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
               ],
             ),
@@ -414,9 +337,7 @@ class _InventoryMovementPageState
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -424,45 +345,28 @@ class _InventoryMovementPageState
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
-            mainAxisSize:
-                MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 60,
-              ),
+              const Icon(Icons.error_outline, size: 60),
 
               const SizedBox(height: 12),
 
               const Text(
                 'Gagal mengambil riwayat stok.',
-                textAlign:
-                    TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight:
-                      FontWeight.bold,
-                ),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 8),
 
-              Text(
-                _errorMessage!,
-                textAlign:
-                    TextAlign.center,
-              ),
+              Text(_errorMessage!, textAlign: TextAlign.center),
 
               const SizedBox(height: 16),
 
               FilledButton.icon(
-                onPressed:
-                    _loadMovements,
-                icon: const Icon(
-                  Icons.refresh,
-                ),
-                label:
-                    const Text('Coba Lagi'),
+                onPressed: _loadMovements,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Coba Lagi'),
               ),
             ],
           ),
@@ -474,24 +378,18 @@ class _InventoryMovementPageState
       return RefreshIndicator(
         onRefresh: _loadMovements,
         child: ListView(
-          physics:
-              const AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           children: const [
             SizedBox(height: 120),
 
-            Icon(
-              Icons.history,
-              size: 70,
-            ),
+            Icon(Icons.history, size: 70),
 
             SizedBox(height: 16),
 
             Center(
               child: Text(
                 'Belum ada riwayat stok.',
-                style: TextStyle(
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontSize: 16),
               ),
             ),
           ],
@@ -502,25 +400,13 @@ class _InventoryMovementPageState
     return RefreshIndicator(
       onRefresh: _loadMovements,
       child: ListView.builder(
-        padding:
-            const EdgeInsets.fromLTRB(
-          16,
-          8,
-          16,
-          24,
-        ),
-        physics:
-            const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _movements.length,
         itemBuilder: (context, index) {
-          final movement =
-              Map<String, dynamic>.from(
-            _movements[index],
-          );
+          final movement = Map<String, dynamic>.from(_movements[index]);
 
-          return _buildMovementCard(
-            movement,
-          );
+          return _buildMovementCard(movement);
         },
       ),
     );
@@ -530,38 +416,23 @@ class _InventoryMovementPageState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Riwayat Inventaris',
-        ),
+        title: const Text('Riwayat Inventaris'),
         actions: [
           IconButton(
             tooltip: 'Refresh',
-            onPressed:
-                _isLoading
-                    ? null
-                    : _loadMovements,
-            icon: const Icon(
-              Icons.refresh,
-            ),
+            onPressed: _isLoading ? null : _loadMovements,
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: Column(
         children: [
           Padding(
-            padding:
-                const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              8,
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: _buildFilter(),
           ),
 
-          Expanded(
-            child: _buildBody(),
-          ),
+          Expanded(child: _buildBody()),
         ],
       ),
     );
