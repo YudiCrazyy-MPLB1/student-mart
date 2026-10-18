@@ -22,6 +22,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> createOrder() async {
+    if (isProcessing) return; // Prevent multiple submissions
     final cart = context.read<CartController>();
     if (cart.items.isEmpty) {
       return;
