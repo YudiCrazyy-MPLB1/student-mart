@@ -685,8 +685,7 @@ class _HomePageState extends State<HomePage> {
                       suffixIcon: ValueListenableBuilder<TextEditingValue>(
                         valueListenable: searchController,
                         builder: (context, value, _) {
-                          if (value.text.isEmpty)
-                            return const SizedBox.shrink();
+                          if (value.text.isEmpty) return const SizedBox.shrink();
                           return IconButton(
                             onPressed: searchController.clear,
                             icon: const Icon(

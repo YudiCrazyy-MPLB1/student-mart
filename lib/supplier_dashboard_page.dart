@@ -133,7 +133,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
   // --- FUNGSI PILIH GAMBAR (Khusus Web) ---
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
 
     if (image != null) {
       final bytes = await image.readAsBytes();
@@ -543,7 +543,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
                                       width: 60,
                                       height: 60,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(
+                                      errorBuilder: (_, error, stackTrace) => const Icon(
                                         Icons.broken_image,
                                         size: 60,
                                         color: Colors.grey,

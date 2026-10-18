@@ -229,7 +229,7 @@ class _ManagerAdsPageState extends State<ManagerAdsPage> {
                               height: 120,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder: (_, error, stackTrace) => Container(
                                 height: 120,
                                 color: Colors.grey.shade300,
                                 child: const Center(

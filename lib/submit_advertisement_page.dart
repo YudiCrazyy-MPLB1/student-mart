@@ -50,7 +50,10 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
   // Pilih Banner Iklan
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
 
     if (image != null) {
       final bytes = await image.readAsBytes();
@@ -160,7 +163,7 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedPackage,
+                  initialValue: _selectedPackage,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),
@@ -200,29 +203,31 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text('Tunai di Koperasi'),
-                        subtitle: const Text('Bayar langsung ke kasir'),
-                        value: 'cash_koperasi',
-                        groupValue: _selectedPaymentMethod,
-                        onChanged: (val) =>
-                            setState(() => _selectedPaymentMethod = val!),
+                RadioGroup<String>(
+                  groupValue: _selectedPaymentMethod,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedPaymentMethod = val);
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: RadioListTile<String>(
+                          title: const Text('Tunai di Koperasi'),
+                          subtitle: const Text('Bayar langsung ke kasir'),
+                          value: 'cash_koperasi',
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text('Digital / E-Wallet'),
-                        subtitle: const Text('Transfer / DANA'),
-                        value: 'digital_wallet',
-                        groupValue: _selectedPaymentMethod,
-                        onChanged: (val) =>
-                            setState(() => _selectedPaymentMethod = val!),
+                      Expanded(
+                        child: RadioListTile<String>(
+                          title: const Text('Digital / E-Wallet'),
+                          subtitle: const Text('Transfer / DANA'),
+                          value: 'digital_wallet',
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
 

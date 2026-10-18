@@ -236,38 +236,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
 
-                    child: Column(
-                      children: [
-                        RadioListTile<String>(
-                          value: 'Ambil di Student Mart',
-                          groupValue: pickupMethod,
-                          title: const Text('Ambil di Student Mart'),
-                          subtitle: const Text(
-                            'Ambil pesanan langsung di koperasi',
+                    child: RadioGroup<String>(
+                      groupValue: pickupMethod,
+                      onChanged: (value) {
+                        if (isProcessing || value == null) return; // Disable changes while processing
+                        setState(() {
+                          pickupMethod = value;
+                          // OTOMATIS UBAH PEMBAYARAN SESUAI PENGAMBILAN
+                          if (pickupMethod == 'Ambil di Student Mart') {
+                            paymentMethod = 'Bayar di Kasir';
+                          } else {
+                            paymentMethod = 'Bayar di Tempat';
+                          }
+                        });
+                      },
+                      child: Column(
+                        children: [
+                          RadioListTile<String>(
+                            value: 'Ambil di Student Mart',
+                            title: const Text('Ambil di Student Mart'),
+                            subtitle: const Text(
+                              'Ambil pesanan langsung di koperasi',
+                            ),
                           ),
-                          onChanged: isProcessing
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    pickupMethod = value!;
-                                  });
-                                },
-                        ),
-
-                        RadioListTile<String>(
-                          value: 'Antar ke Kelas',
-                          groupValue: pickupMethod,
-                          title: const Text('Antar ke Kelas'),
-                          subtitle: const Text('Pesanan diantar ke kelas'),
-                          onChanged: isProcessing
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    pickupMethod = value!;
-                                  });
-                                },
-                        ),
-                      ],
+                          RadioListTile<String>(
+                            value: 'Antar ke Kelas',
+                            title: const Text('Antar ke Kelas'),
+                            subtitle: const Text('Pesanan diantar ke kelas'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -288,38 +286,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Column(
-                      children: [
-                        RadioListTile<String>(
-                          value: 'Bayar di Kasir',
-                          groupValue: paymentMethod,
-                          title: const Text('Bayar di Kasir'),
-                          subtitle: const Text('Bayar saat mengambil pesanan'),
-                          onChanged: isProcessing
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    paymentMethod = value!;
-                                  });
-                                },
-                        ),
-
-                        RadioListTile<String>(
-                          value: 'Saldo Siswa',
-                          groupValue: paymentMethod,
-                          title: const Text('Saldo Siswa'),
-                          subtitle: const Text(
-                            'Gunakan saldo akun Student Mart',
+                    child: RadioGroup<String>(
+                      groupValue: paymentMethod,
+                      onChanged: (value) {
+                        if (isProcessing || value == null) return;
+                        setState(() {
+                          paymentMethod = value;
+                        });
+                      },
+                      child: Column(
+                        children: [
+                          RadioListTile<String>(
+                            value: 'Bayar di Kasir',
+                            title: const Text('Bayar di Kasir'),
+                            subtitle: const Text(
+                              'Bayar saat mengambil pesanan di koperasi',
+                            ),
                           ),
-                          onChanged: isProcessing
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    paymentMethod = value!;
-                                  });
-                                },
-                        ),
-                      ],
+                          RadioListTile<String>(
+                            value: 'Bayar di Tempat',
+                            title: const Text('Bayar di Tempat'),
+                            subtitle: const Text(
+                              'Bayar saat pesanan diantar ke kelas',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
