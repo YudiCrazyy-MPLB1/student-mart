@@ -5,6 +5,8 @@ import 'product_model.dart';
 import 'cart_controller.dart';
 import 'cart_page.dart';
 import 'api_service.dart';
+import 'utils.dart';
+import 'skeleton_widgets.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -22,10 +24,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   String? errorMessage;
 
   int quantity = 1;
-
-  String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
-  }
 
   @override
   void initState() {
@@ -113,7 +111,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Widget _buildBody() {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SkeletonDetail();
     }
 
     if (errorMessage != null) {
@@ -211,7 +209,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
           // HARGA
           Text(
-            formatRupiah(currentProduct.price),
+            AppUtils.formatRupiah(currentProduct.price),
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -293,7 +291,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
-                formatRupiah(subtotal),
+                AppUtils.formatRupiah(subtotal),
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,

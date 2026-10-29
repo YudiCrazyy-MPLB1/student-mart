@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'utils.dart';
+import 'skeleton_widgets.dart';
 
 class InventoryMovementPage extends StatefulWidget {
   const InventoryMovementPage({super.key});
@@ -57,16 +59,6 @@ class _InventoryMovementPageState extends State<InventoryMovementPage> {
         _errorMessage = e.toString();
       });
     }
-  }
-
-  int _toInt(dynamic value) {
-    if (value is int) return value;
-
-    if (value is double) {
-      return value.toInt();
-    }
-
-    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   String _typeLabel(String type) {
@@ -209,11 +201,11 @@ class _InventoryMovementPageState extends State<InventoryMovementPage> {
   Widget _buildMovementCard(Map<String, dynamic> movement) {
     final type = movement['type']?.toString() ?? '';
 
-    final quantity = _toInt(movement['quantity']);
+    final quantity = AppUtils.toInt(movement['quantity']);
 
-    final stockBefore = _toInt(movement['stock_before']);
+    final stockBefore = AppUtils.toInt(movement['stock_before']);
 
-    final stockAfter = _toInt(movement['stock_after']);
+    final stockAfter = AppUtils.toInt(movement['stock_after']);
 
     final color = _typeColor(type);
 
@@ -337,7 +329,7 @@ class _InventoryMovementPageState extends State<InventoryMovementPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SkeletonList();
     }
 
     if (_errorMessage != null) {

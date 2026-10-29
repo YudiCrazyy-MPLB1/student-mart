@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
 import 'product_model.dart';
+import 'utils.dart';
+import 'skeleton_widgets.dart';
 
 class ManagerProductPage extends StatefulWidget {
   const ManagerProductPage({super.key});
@@ -727,14 +729,6 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
   }
 
   // ============================================================
-  // FORMAT PRICE
-  // ============================================================
-
-  String formatPrice(int price) {
-    return 'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}';
-  }
-
-  // ============================================================
   // PRODUCT IMAGE
   // ============================================================
 
@@ -869,7 +863,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
           // ========================================================
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const SkeletonList()
                 : visibleProducts.isEmpty
                 ? Center(
                     child: Column(
@@ -932,7 +926,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                                 const SizedBox(height: 5),
 
                                 Text(
-                                  formatPrice(product.price),
+                                  AppUtils.formatRupiah(product.price),
 
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w600,

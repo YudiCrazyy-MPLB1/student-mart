@@ -16,6 +16,10 @@ class SupplierDashboardPage extends StatefulWidget {
 
 class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     with SingleTickerProviderStateMixin {
+  /// setState yang aman dipanggil setelah `await` (halaman bisa sudah ditutup).
+  void _safeSetState(VoidCallback fn) {
+    if (mounted) setState(fn);
+  }
   bool _isSupplier = false;
   bool _isLoading = true;
 
@@ -54,12 +58,12 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
 
   // --- AMBIL DATA USER TERBARU DARI API ---
   Future<void> _loadUserData() async {
-    setState(() => _isLoading = true);
+    _safeSetState(() => _isLoading = true);
     try {
       final user = await ApiService.getMe();
       final supplierStatus = user['is_supplier'];
 
-      setState(() {
+      _safeSetState(() {
         _isSupplier =
             (supplierStatus == 1 ||
             supplierStatus == true ||
@@ -72,24 +76,24 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     } catch (e) {
       _showMessage('Gagal memuat status akun: $e', isError: true);
     } finally {
-      setState(() => _isLoading = false);
+      _safeSetState(() => _isLoading = false);
     }
   }
 
   // --- AMBIL DAFTAR PRODUK KONSINYASI SAYA ---
   Future<void> _fetchMyConsignmentProducts() async {
-    setState(() => _isLoadingProducts = true);
+    _safeSetState(() => _isLoadingProducts = true);
     try {
       // Pastikan method getMyConsignmentProducts tersedia di ApiService Anda,
       // atau gunakan endpoint yang sesuai untuk mengambil produk milik supplier yang sedang login.
       final products = await ApiService.getMyConsignmentProducts(); // Sesuaikan jika ada endpoint khusus produk saya
-      setState(() {
+      _safeSetState(() {
         _myProducts = products;
       });
     } catch (e) {
       debugPrint('Gagal memuat daftar produk: $e');
     } finally {
-      setState(() => _isLoadingProducts = false);
+      _safeSetState(() => _isLoadingProducts = false);
     }
   }
 
@@ -105,7 +109,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
 
     if (setuju == true) {
       if (!_isSupplier) {
-        setState(() => _isLoading = true);
+        _safeSetState(() => _isLoading = true);
         try {
           await ApiService.agreeTos();
           await _loadUserData();
@@ -113,7 +117,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
         } catch (e) {
           _showMessage(e.toString(), isError: true);
         } finally {
-          setState(() => _isLoading = false);
+          _safeSetState(() => _isLoading = false);
         }
       }
     }
@@ -137,7 +141,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
 
     if (image != null) {
       final bytes = await image.readAsBytes();
-      setState(() {
+      _safeSetState(() {
         _selectedImageBytes = bytes;
         _selectedImageName = image.name;
       });
@@ -157,7 +161,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
       return;
     }
 
-    setState(() => _isLoading = true);
+    _safeSetState(() => _isLoading = true);
 
     try {
       await ApiService.submitConsignmentProduct(
@@ -175,22 +179,24 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
       _descController.clear();
       _priceController.clear();
       _stockController.clear();
-      setState(() {
+      _safeSetState(() {
         _selectedImageBytes = null;
         _selectedImageName = null;
       });
 
       // Refresh daftar produk & pindah ke tab status
+      if (!mounted) return;
       _fetchMyConsignmentProducts();
       _tabController.animateTo(1);
     } catch (e) {
       _showMessage(e.toString(), isError: true);
     } finally {
-      setState(() => _isLoading = false);
+      _safeSetState(() => _isLoading = false);
     }
   }
 
   void _showMessage(String msg, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),

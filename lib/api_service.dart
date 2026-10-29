@@ -2,25 +2,47 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-import 'product_model.dart';
-import 'config.dart';
-
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
+import 'api_exception.dart';
+import 'config.dart';
+import 'product_model.dart';
+
+/// Satu-satunya pintu komunikasi ke backend Laravel.
+///
+/// Semua request lewat [_json] (JSON) atau [_multipart] (upload), lalu
+/// diproses oleh [_send]. Artinya untuk SEMUA endpoint:
+///   - timeout selalu ada,
+///   - response non-JSON (HTML 502/maintenance) tidak pernah crash,
+///   - body mentah server tidak pernah bocor ke pesan error,
+///   - semua error dilempar sebagai [ApiException] (ada statusCode),
+///   - 401 pada request ber-token ditangani di satu tempat
+///     (hapus token + panggil [onUnauthorized]).
+///
+/// Signature method publik sengaja TIDAK diubah, jadi halaman yang sudah
+/// ada tidak perlu diedit.
+/// 
 class ApiService {
   static const flutterSecureStorage = FlutterSecureStorage();
   static final String baseUrl = Config.baseUrl;
 
   static const Duration requestTimeout = Duration(seconds: 15);
 
+  /// Upload gambar / import Excel butuh waktu lebih lama di jaringan lambat.
+  static const Duration uploadTimeout = Duration(seconds: 60);
+
   static String? authToken;
   static String? userRole;
 
-  static const String _tokenKey = 'student_mart_auth_token';
+  /// Dipanggil SEKALI saat sesi berakhir (server membalas 401 untuk request
+  /// yang membawa token). Diset oleh AuthProvider; di situlah navigasi ke
+  /// halaman login dan reset state dilakukan.
+  static void Function()? onUnauthorized;
+  static bool _sessionExpiryHandled = false;
 
+  static const String _tokenKey = 'student_mart_auth_token';
   static const String _roleKey = 'student_mart_user_role';
 
   // ============================================================
@@ -39,6 +61,7 @@ class ApiService {
 
   static Future<void> saveToken(String token, String? role) async {
     authToken = token;
+    _sessionExpiryHandled = false; // sesi baru, handler 401 aktif lagi
 
     if (role != null && role.isNotEmpty) {
       userRole = role.toLowerCase();
@@ -57,23 +80,6 @@ class ApiService {
 
     await flutterSecureStorage.delete(key: _tokenKey);
     await flutterSecureStorage.delete(key: _roleKey);
-  }
-
-  // ============================================================
-  // HEADERS
-  // ============================================================
-
-  static Map<String, String> get _headers {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
-
-    if (authToken != null && authToken!.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $authToken';
-    }
-
-    return headers;
   }
 
   // ============================================================
@@ -97,9 +103,314 @@ class ApiService {
 
     final serverUrl = baseUrl.replaceFirst(RegExp(r'/api(/v1)?$'), '');
 
-    // Memecah path dan melakukan encode pada nama file/folder agar spasi terbaca aman
     final uri = Uri.parse('$serverUrl/$cleanPath');
     return uri.toString();
+  }
+
+  // ============================================================
+  // CORE: REQUEST PIPELINE (semua endpoint lewat sini)
+  // ============================================================
+
+  static Uri _uri(String path, [Map<String, String>? query]) {
+    final uri = Uri.parse('$baseUrl$path');
+    if (query == null || query.isEmpty) return uri;
+    return uri.replace(queryParameters: query);
+  }
+
+  static Map<String, String> _headers({String? token, bool json = true}) {
+    final headers = <String, String>{'Accept': 'application/json'};
+
+    if (json) headers['Content-Type'] = 'application/json';
+
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    return headers;
+  }
+
+  /// Menentukan token yang dipakai request ini.
+  /// [isPublic] = endpoint tanpa login (token tidak dikirim sama sekali).
+  /// [requireAuth] = langsung gagal kalau belum login (tanpa hit server).
+  static String? _resolveToken({
+    required bool isPublic,
+    required bool requireAuth,
+    String? notLoggedInMessage,
+  }) {
+    if (isPublic) return null;
+
+    final token = authToken;
+    final hasToken = token != null && token.isNotEmpty;
+
+    if (!hasToken && requireAuth) {
+      throw ApiException(
+        401,
+        notLoggedInMessage ?? 'Kamu belum login. Silakan login terlebih dahulu.',
+      );
+    }
+
+    return hasToken ? token : null;
+  }
+
+  /// Request JSON. Mengembalikan body response (Map) kalau sukses.
+  static Future<Map<String, dynamic>> _json(
+    String method,
+    String path, {
+    required String fallback,
+    Map<String, String>? query,
+    Object? body,
+    bool requireAuth = false,
+    bool isPublic = false,
+    String? notLoggedInMessage,
+    Duration? timeout,
+    String? timeoutMessage,
+    Map<int, String>? statusMessages,
+  }) async {
+    final token = _resolveToken(
+      isPublic: isPublic,
+      requireAuth: requireAuth,
+      notLoggedInMessage: notLoggedInMessage,
+    );
+
+    final request = http.Request(method, _uri(path, query))
+      ..headers.addAll(_headers(token: token, json: body != null));
+
+    if (body != null) request.body = jsonEncode(body);
+
+    return _send(
+      request,
+      usedToken: token,
+      isPublic: isPublic,
+      fallback: fallback,
+      timeout: timeout ?? requestTimeout,
+      timeoutMessage: timeoutMessage,
+      statusMessages: statusMessages,
+    );
+  }
+
+  /// Request multipart (upload file). Selalu POST.
+  static Future<Map<String, dynamic>> _multipart(
+    String path, {
+    required String fallback,
+    Map<String, String> fields = const {},
+    List<http.MultipartFile> files = const [],
+    bool requireAuth = false,
+    String? notLoggedInMessage,
+    String? timeoutMessage,
+  }) async {
+    final token = _resolveToken(
+      isPublic: false,
+      requireAuth: requireAuth,
+      notLoggedInMessage: notLoggedInMessage,
+    );
+
+    final request = http.MultipartRequest('POST', _uri(path))
+      ..headers.addAll(_headers(token: token, json: false))
+      ..fields.addAll(fields)
+      ..files.addAll(files);
+
+    return _send(
+      request,
+      usedToken: token,
+      isPublic: false,
+      fallback: fallback,
+      timeout: uploadTimeout,
+      timeoutMessage: timeoutMessage ?? 'Upload terlalu lama. Coba lagi.',
+    );
+  }
+
+  static Future<Map<String, dynamic>> _send(
+    http.BaseRequest request, {
+    required String? usedToken,
+    required bool isPublic,
+    required String fallback,
+    required Duration timeout,
+    String? timeoutMessage,
+    Map<int, String>? statusMessages,
+  }) async {
+    try {
+      final response = await request
+          .send()
+          .then(http.Response.fromStream)
+          .timeout(timeout);
+
+      return await _parse(
+        response,
+        usedToken: usedToken,
+        isPublic: isPublic,
+        fallback: fallback,
+        statusMessages: statusMessages,
+      );
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(
+        408,
+        timeoutMessage ?? 'Server terlalu lama merespons. Coba lagi.',
+      );
+    } on http.ClientException {
+      throw ApiException(503, 'Tidak dapat terhubung ke server.');
+    } on FormatException {
+      throw ApiException(502, 'Server mengirim response yang tidak valid.');
+    } catch (e) {
+      // SocketException dll. Tidak meng-import dart:io supaya tetap
+      // bisa dibuild untuk web.
+      if (e.toString().contains('SocketException')) {
+        throw ApiException(503, 'Tidak dapat terhubung ke server.');
+      }
+      throw ApiException(500, fallback);
+    }
+  }
+
+  static Future<Map<String, dynamic>> _parse(
+    http.Response response, {
+    required String? usedToken,
+    required bool isPublic,
+    required String fallback,
+    Map<int, String>? statusMessages,
+  }) async {
+    final status = response.statusCode;
+    final isOk = status >= 200 && status < 300;
+    final json = _tryDecode(response.body);
+
+    // 401 pada request yang membawa token = sesi berakhir.
+    var isSessionExpiry = false;
+    if (status == 401 && !isPublic && usedToken != null) {
+      isSessionExpiry = true;
+      await _expireSession(usedToken);
+    }
+
+    // Gagal: status non-2xx, atau server eksplisit bilang success:false.
+    if (!isOk || (json != null && json['success'] == false)) {
+      throw ApiException(
+        status,
+        _errorMessage(
+          status,
+          json,
+          fallback,
+          statusMessages: statusMessages,
+          sessionExpiry: isSessionExpiry,
+        ),
+      );
+    }
+
+    if (json == null) {
+      // 2xx tanpa body (mis. 204) dianggap sukses kosong.
+      if (response.body.trim().isEmpty) return <String, dynamic>{};
+      throw ApiException(502, 'Server mengirim response yang tidak valid.');
+    }
+
+    return json;
+  }
+
+  static Map<String, dynamic>? _tryDecode(String body) {
+    if (body.trim().isEmpty) return null;
+
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Pesan error yang aman ditampilkan ke user.
+  /// Body mentah server TIDAK PERNAH dipakai; untuk 5xx pesan server juga
+  /// diabaikan (APP_DEBUG=true di Laravel bisa membocorkan SQL/stacktrace).
+  static String _errorMessage(
+    int status,
+    Map<String, dynamic>? json,
+    String fallback, {
+    Map<int, String>? statusMessages,
+    required bool sessionExpiry,
+  }) {
+    final override = statusMessages?[status];
+    if (override != null) return override;
+
+    if (sessionExpiry) {
+      return 'Sesi login sudah berakhir. Silakan login kembali.';
+    }
+
+    if (status >= 500) {
+      return 'Server sedang bermasalah. Coba lagi nanti.';
+    }
+
+    final message = json?['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message.trim();
+    }
+
+    // Validasi Laravel: {"errors": {"email": ["..."]}}
+    final errors = json?['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final first = errors.values.first;
+      if (first is List && first.isNotEmpty) return first.first.toString();
+      if (first is String && first.isNotEmpty) return first;
+    }
+
+    if (status == 429) return 'Terlalu banyak percobaan. Coba lagi nanti.';
+
+    return fallback;
+  }
+
+  /// Satu-satunya tempat sesi dinyatakan berakhir.
+  static Future<void> _expireSession(String usedToken) async {
+    // Kalau token sudah berganti (user login ulang saat request lama masih
+    // berjalan), jangan hapus token baru.
+    if (authToken != usedToken) return;
+
+    await clearToken();
+
+    if (!_sessionExpiryHandled) {
+      _sessionExpiryHandled = true;
+      onUnauthorized?.call();
+    }
+  }
+
+  // ---------- helper membaca field "data" ----------
+
+  static Map<String, dynamic> _dataMap(Map<String, dynamic> json) {
+    final data = json['data'];
+    return data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+  }
+
+  static Map<String, dynamic> _requireDataMap(
+    Map<String, dynamic> json,
+    String invalidMessage,
+  ) {
+    final data = json['data'];
+    if (data is! Map) throw ApiException(502, invalidMessage);
+    return Map<String, dynamic>.from(data);
+  }
+
+  /// Menerima `data: [...]` maupun hasil paginate() `data: {data: [...]}`.
+  /// Kalau [invalidMessage] diisi, bentuk yang tidak dikenal melempar error
+  /// (bukan diam-diam menjadi list kosong).
+  static List<dynamic> _dataList(
+    Map<String, dynamic> json, {
+    String? invalidMessage,
+  }) {
+    final data = json['data'];
+
+    if (data is List) return List<dynamic>.from(data);
+
+    if (data is Map && data['data'] is List) {
+      return List<dynamic>.from(data['data'] as List);
+    }
+
+    if (invalidMessage != null) throw ApiException(502, invalidMessage);
+
+    return <dynamic>[];
+  }
+
+  static List<Map<String, dynamic>> _mapList(List<dynamic> list) {
+    return list.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+  }
+
+  static List<Product> _productList(List<dynamic> list) {
+    return list
+        .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
 
   // ============================================================
@@ -110,57 +421,30 @@ class ApiService {
     required String email,
     required String password,
   }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/login'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode({'email': email.trim(), 'password': password}),
-          )
-          .timeout(requestTimeout);
+    final json = await _json(
+      'POST',
+      '/login',
+      body: {'email': email.trim(), 'password': password},
+      isPublic: true,
+      fallback: 'Email atau password salah.',
+      timeoutMessage: 'Server terlalu lama merespons. Coba lagi.',
+    );
 
-      final json = _decodeResponse(response);
+    final data = _dataMap(json);
 
-      if (response.statusCode != 200) {
-        throw Exception(json['message'] ?? 'Email atau password salah.');
-      }
+    final token = data['token'];
+    final user = data['user'];
+    String? role;
 
-      if (json['success'] != true) {
-        throw Exception(json['message'] ?? 'Login gagal.');
-      }
-
-      final data = Map<String, dynamic>.from(json['data'] ?? {});
-
-      final token = data['token'];
-      final user = data['user'];
-      String? role;
-
-      if (user is Map<String, dynamic>) {
-        role = user['role']?.toString();
-      }
-
-      if (token != null && token.toString().isNotEmpty) {
-        await saveToken(token.toString(), role ?? 'student');
-      }
-
-      return data;
-    } on TimeoutException {
-      throw Exception(
-        'Server terlalu lama merespons. '
-        'Coba lagi.',
-      );
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Terjadi kesalahan saat login.');
+    if (user is Map) {
+      role = user['role']?.toString();
     }
+
+    if (token != null && token.toString().isNotEmpty) {
+      await saveToken(token.toString(), role ?? 'student');
+    }
+
+    return data;
   }
 
   // ============================================================
@@ -174,82 +458,46 @@ class ApiService {
     required String passwordConfirmation,
     required String kodeUndangan,
   }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/register'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode({
-              'name': name.trim(),
-              'email': email.trim(),
-              'password': password,
-              'password_confirmation': passwordConfirmation,
-              'kode_undangan': kodeUndangan.trim(),
-            }),
-          )
-          .timeout(requestTimeout);
+    final json = await _json(
+      'POST',
+      '/register',
+      body: {
+        'name': name.trim(),
+        'email': email.trim(),
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+        'kode_undangan': kodeUndangan.trim(),
+      },
+      isPublic: true,
+      fallback: 'Pendaftaran gagal.',
+    );
 
-      final json = _decodeResponse(response);
-
-      if (response.statusCode != 201) {
-        throw Exception(json['message'] ?? 'Pendaftaran gagal.');
-      }
-
-      if (json['success'] != true) {
-        throw Exception(json['message'] ?? 'Pendaftaran gagal.');
-      }
-
-      final data = Map<String, dynamic>.from(json['data'] ?? {});
-
-      return data;
-    } on TimeoutException {
-      throw Exception('Server terlalu lama merespons.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Terjadi kesalahan saat mendaftar.');
-    }
+    return _dataMap(json);
   }
 
   // ============================================================
   // LOGOUT
   // ============================================================
 
+  /// Selalu menghapus token lokal dan TIDAK PERNAH melempar error.
+  /// Pemanggilan ke server hanya best-effort: kalau server tidak terjangkau,
+  /// user tetap harus bisa keluar.
   static Future<void> logout() async {
-    if (authToken == null) {
-      await clearToken();
-      return;
-    }
+    final token = authToken;
 
     try {
-      final response = await http
-          .post(Uri.parse('$baseUrl/logout'), headers: _headers)
-          .timeout(requestTimeout);
-
-      await clearToken();
-
-      if (response.statusCode != 200 && response.statusCode != 401) {
-        throw Exception('Logout gagal.');
+      if (token != null && token.isNotEmpty) {
+        await http
+            .post(
+              _uri('/logout'),
+              headers: _headers(token: token, json: false),
+            )
+            .timeout(requestTimeout);
       }
-    } on TimeoutException {
+    } catch (_) {
+      // sengaja diabaikan
+    } finally {
       await clearToken();
-
-      throw Exception('Server terlalu lama merespons.');
-    } catch (e) {
-      await clearToken();
-
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Logout gagal.');
     }
   }
 
@@ -258,54 +506,25 @@ class ApiService {
   // ============================================================
 
   static Future<Map<String, dynamic>> getMe() async {
-    if (authToken == null || authToken!.isEmpty) {
-      throw Exception('Tidak ada token login.');
+    final json = await _json(
+      'GET',
+      '/me',
+      requireAuth: true,
+      notLoggedInMessage: 'Tidak ada token login.',
+      fallback: 'Gagal mengambil data pengguna.',
+    );
+
+    final data = _dataMap(json);
+
+    // Sinkronisasi role terbaru.
+    final role = data['role']?.toString();
+
+    if (role != null && role.isNotEmpty) {
+      userRole = role.toLowerCase();
+      await flutterSecureStorage.write(key: _roleKey, value: userRole!);
     }
 
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/me'), headers: _headers)
-          .timeout(requestTimeout);
-
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 401) {
-        await clearToken();
-
-        throw Exception('Sesi login sudah berakhir.');
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception(json['message'] ?? 'Gagal mengambil data pengguna.');
-      }
-
-      if (json['success'] != true) {
-        throw Exception(json['message'] ?? 'Gagal mengambil data pengguna.');
-      }
-
-      final data = Map<String, dynamic>.from(json['data'] ?? {});
-
-      // Sinkronisasi role terbaru.
-      final role = data['role']?.toString();
-
-      if (role != null && role.isNotEmpty) {
-        userRole = role.toLowerCase();
-
-        await flutterSecureStorage.write(key: _roleKey, value: userRole!);
-      }
-
-      return data;
-    } on TimeoutException {
-      throw Exception('Server terlalu lama merespons.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal mengambil data pengguna.');
-    }
+    return data;
   }
 
   // ============================================================
@@ -313,44 +532,14 @@ class ApiService {
   // ============================================================
 
   static Future<void> forgotPassword(String email) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/forgot-password'),
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({'email': email.trim()}),
-          )
-          .timeout(requestTimeout);
-
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 422) {
-        throw Exception(json['message'] ?? 'Email tidak valid.');
-      }
-
-      if (response.statusCode == 429) {
-        throw Exception(json['message'] ?? 'Terlalu banyak percobaan.');
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception(
-          json['message'] ?? 'Gagal mengirim link reset password.',
-        );
-      }
-    } on TimeoutException {
-      throw Exception('Permintaan terlalu lama.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal mengirim link reset password.');
-    }
+    await _json(
+      'POST',
+      '/forgot-password',
+      body: {'email': email.trim()},
+      isPublic: true,
+      fallback: 'Gagal mengirim link reset password.',
+      timeoutMessage: 'Permintaan terlalu lama.',
+    );
   }
 
   static Future<void> resetPassword({
@@ -359,43 +548,19 @@ class ApiService {
     required String password,
     required String passwordConfirmation,
   }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/reset-password'),
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'token': token,
-              'email': email,
-              'password': password,
-              'password_confirmation': passwordConfirmation,
-            }),
-          )
-          .timeout(requestTimeout);
-
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 422) {
-        throw Exception(json['message'] ?? 'Token atau password tidak valid.');
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception(json['message'] ?? 'Gagal mereset password.');
-      }
-    } on TimeoutException {
-      throw Exception('Permintaan terlalu lama.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal mereset password.');
-    }
+    await _json(
+      'POST',
+      '/reset-password',
+      body: {
+        'token': token,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+      isPublic: true,
+      fallback: 'Gagal mereset password.',
+      timeoutMessage: 'Permintaan terlalu lama.',
+    );
   }
 
   // ============================================================
@@ -403,51 +568,17 @@ class ApiService {
   // ============================================================
 
   static Future<Map<String, dynamic>> getManagerDashboard() async {
-    if (authToken == null || authToken!.isEmpty) {
-      throw Exception('Kamu belum login sebagai manager.');
-    }
+    final json = await _json(
+      'GET',
+      '/manager/dashboard',
+      requireAuth: true,
+      notLoggedInMessage: 'Kamu belum login sebagai manager.',
+      fallback: 'Gagal mengambil dashboard manager.',
+      timeoutMessage: 'Mengambil dashboard terlalu lama.',
+      statusMessages: {403: 'Akses ditolak. Akun ini bukan manager.'},
+    );
 
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/manager/dashboard'), headers: _headers)
-          .timeout(requestTimeout);
-
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 401) {
-        await clearToken();
-
-        throw Exception('Sesi login sudah berakhir.');
-      }
-
-      if (response.statusCode == 403) {
-        throw Exception('Akses ditolak. Akun ini bukan manager.');
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception(
-          json['message'] ?? 'Gagal mengambil dashboard manager.',
-        );
-      }
-
-      if (json['success'] != true) {
-        throw Exception(
-          json['message'] ?? 'Gagal mengambil dashboard manager.',
-        );
-      }
-
-      return Map<String, dynamic>.from(json['data'] ?? {});
-    } on TimeoutException {
-      throw Exception('Mengambil dashboard terlalu lama.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal mengambil dashboard manager.');
-    }
+    return _dataMap(json);
   }
 
   // ============================================================
@@ -455,21 +586,15 @@ class ApiService {
   // ============================================================
 
   static Future<List<Product>> getManagerProducts() async {
-    final response = await http
-        .get(Uri.parse('$baseUrl/manager/products'), headers: _headers)
-        .timeout(requestTimeout);
+    final json = await _json(
+      'GET',
+      '/manager/products',
+      fallback: 'Gagal mengambil produk manager.',
+    );
 
-    final decoded = _decodeResponse(response);
-
-    final data = decoded['data'];
-
-    if (data is! List) {
-      throw Exception('Data produk manager tidak valid.');
-    }
-
-    return data
-        .map((item) => Product.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
+    return _productList(
+      _dataList(json, invalidMessage: 'Data produk manager tidak valid.'),
+    );
   }
 
   static Future<Product> createManagerProduct({
@@ -481,48 +606,34 @@ class ApiService {
     XFile? imageFile,
     bool isActive = true,
   }) async {
-    if (authToken == null || authToken!.isEmpty) {
-      throw Exception('Kamu belum login sebagai manager.');
-    }
-
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/manager/products'),
-    );
-
-    request.headers.addAll(_headers);
-
-    request.fields['category_id'] = categoryId.toString();
-
-    request.fields['name'] = name;
-
-    request.fields['description'] = description ?? '';
-
-    request.fields['price'] = price.toString();
-
-    request.fields['stock'] = stock.toString();
-
-    request.fields['is_active'] = isActive ? '1' : '0';
+    final files = <http.MultipartFile>[];
 
     if (imageFile != null) {
       final bytes = await imageFile.readAsBytes();
-
-      request.files.add(
+      files.add(
         http.MultipartFile.fromBytes('image', bytes, filename: imageFile.name),
       );
     }
 
-    final streamedResponse = await request.send().timeout(requestTimeout);
+    final json = await _multipart(
+      '/manager/products',
+      requireAuth: true,
+      notLoggedInMessage: 'Kamu belum login sebagai manager.',
+      fallback: 'Gagal menambahkan produk.',
+      fields: {
+        'category_id': categoryId.toString(),
+        'name': name,
+        'description': description ?? '',
+        'price': price.toString(),
+        'stock': stock.toString(),
+        'is_active': isActive ? '1' : '0',
+      },
+      files: files,
+    );
 
-    final response = await http.Response.fromStream(streamedResponse);
-
-    final decoded = _decodeResponse(response);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(decoded['message'] ?? 'Gagal menambahkan produk.');
-    }
-
-    return Product.fromJson(Map<String, dynamic>.from(decoded['data']));
+    return Product.fromJson(
+      _requireDataMap(json, 'Response tidak berisi data produk.'),
+    );
   }
 
   static Future<Product> updateManagerProduct({
@@ -535,89 +646,62 @@ class ApiService {
     XFile? imageFile,
     bool? isActive,
   }) async {
-    if (authToken == null || authToken!.isEmpty) {
-      throw Exception('Kamu belum login sebagai manager.');
-    }
+    final fields = <String, String>{
+      // Laravel method spoofing.
+      '_method': 'PUT',
+      'category_id': ?categoryId?.toString(),
+      'name': ?name,
+      'description': ?description,
+      'price': ?price?.toString(),
+      'stock': ?stock?.toString(),
+      if (isActive != null) 'is_active': isActive ? '1' : '0',
+    };
 
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/manager/products/$productId'),
-    );
-
-    request.headers.addAll(_headers);
-
-    // Laravel method spoofing.
-    request.fields['_method'] = 'PUT';
-
-    if (categoryId != null) {
-      request.fields['category_id'] = categoryId.toString();
-    }
-
-    if (name != null) {
-      request.fields['name'] = name;
-    }
-
-    if (description != null) {
-      request.fields['description'] = description;
-    }
-
-    if (price != null) {
-      request.fields['price'] = price.toString();
-    }
-
-    if (stock != null) {
-      request.fields['stock'] = stock.toString();
-    }
-
-    if (isActive != null) {
-      request.fields['is_active'] = isActive ? '1' : '0';
-    }
+    final files = <http.MultipartFile>[];
 
     if (imageFile != null) {
       final bytes = await imageFile.readAsBytes();
-
-      request.files.add(
+      files.add(
         http.MultipartFile.fromBytes('image', bytes, filename: imageFile.name),
       );
     }
 
-    final streamedResponse = await request.send().timeout(requestTimeout);
+    final json = await _multipart(
+      '/manager/products/$productId',
+      requireAuth: true,
+      notLoggedInMessage: 'Kamu belum login sebagai manager.',
+      fallback: 'Gagal memperbarui produk.',
+      fields: fields,
+      files: files,
+    );
 
-    final response = await http.Response.fromStream(streamedResponse);
-
-    final decoded = _decodeResponse(response);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(decoded['message'] ?? 'Gagal memperbarui produk.');
-    }
-
-    return Product.fromJson(Map<String, dynamic>.from(decoded['data']));
+    return Product.fromJson(
+      _requireDataMap(json, 'Response tidak berisi data produk.'),
+    );
   }
 
   static Future<Product> deactivateManagerProduct(int productId) async {
-    final response = await http
-        .delete(
-          Uri.parse('$baseUrl/manager/products/$productId'),
-          headers: _headers,
-        )
-        .timeout(requestTimeout);
+    final json = await _json(
+      'DELETE',
+      '/manager/products/$productId',
+      fallback: 'Gagal menonaktifkan produk.',
+    );
 
-    final decoded = _decodeResponse(response);
-
-    return Product.fromJson(Map<String, dynamic>.from(decoded['data']));
+    return Product.fromJson(
+      _requireDataMap(json, 'Response tidak berisi data produk.'),
+    );
   }
 
   static Future<Product> activateManagerProduct(int productId) async {
-    final response = await http
-        .patch(
-          Uri.parse('$baseUrl/manager/products/$productId/activate'),
-          headers: _headers,
-        )
-        .timeout(requestTimeout);
+    final json = await _json(
+      'PATCH',
+      '/manager/products/$productId/activate',
+      fallback: 'Gagal mengaktifkan produk.',
+    );
 
-    final decoded = _decodeResponse(response);
-
-    return Product.fromJson(Map<String, dynamic>.from(decoded['data']));
+    return Product.fromJson(
+      _requireDataMap(json, 'Response tidak berisi data produk.'),
+    );
   }
 
   // ============================================================
@@ -625,159 +709,83 @@ class ApiService {
   // ============================================================
 
   static Future<Map<String, dynamic>> getInventorySummary() async {
-    final response = await http
-        .get(Uri.parse('$baseUrl/manager/inventory/summary'), headers: _headers)
-        .timeout(requestTimeout);
+    final json = await _json(
+      'GET',
+      '/manager/inventory/summary',
+      fallback: 'Gagal mengambil ringkasan inventaris.',
+    );
 
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(
-        body['message'] ?? 'Gagal mengambil ringkasan inventaris.',
-      );
-    }
-
-    return Map<String, dynamic>.from(body['data'] ?? {});
+    return _dataMap(json);
   }
 
   static Future<Map<String, dynamic>> previewProductExcel(
     Uint8List bytes,
     String fileName,
   ) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/manager/products/import/preview'),
+    final json = await _multipart(
+      '/manager/products/import/preview',
+      fallback: 'Gagal membaca file Excel.',
+      files: [http.MultipartFile.fromBytes('file', bytes, filename: fileName)],
     );
 
-    request.headers.addAll(_headers);
-
-    request.files.add(
-      http.MultipartFile.fromBytes('file', bytes, filename: fileName),
-    );
-
-    final streamedResponse = await request.send().timeout(requestTimeout);
-
-    final response = await http.Response.fromStream(streamedResponse);
-
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal membaca file Excel.');
-    }
-
-    return Map<String, dynamic>.from(body['data'] ?? {});
+    return _dataMap(json);
   }
 
   static Future<Map<String, dynamic>> confirmProductExcel(
     List<dynamic> rows,
   ) async {
-    final response = await http
-        .post(
-          Uri.parse('$baseUrl/manager/products/import/confirm'),
-          headers: _headers,
-          body: jsonEncode({'rows': rows}),
-        )
-        .timeout(requestTimeout);
+    final json = await _json(
+      'POST',
+      '/manager/products/import/confirm',
+      body: {'rows': rows},
+      fallback: 'Gagal melakukan import Excel.',
+      timeout: uploadTimeout, // import banyak baris bisa lama
+    );
 
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal melakukan import Excel.');
-    }
-
-    return Map<String, dynamic>.from(body['data'] ?? {});
+    return _dataMap(json);
   }
 
   static Future<List<dynamic>> getInventoryProducts({
     String search = '',
   }) async {
-    final uri = Uri.parse('$baseUrl/manager/inventory/products').replace(
-      queryParameters: search.trim().isEmpty ? null : {'search': search.trim()},
+    final json = await _json(
+      'GET',
+      '/manager/inventory/products',
+      query: search.trim().isEmpty ? null : {'search': search.trim()},
+      fallback: 'Gagal mengambil daftar inventaris.',
     );
 
-    final response = await http
-        .get(uri, headers: _headers)
-        .timeout(requestTimeout);
-
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal mengambil daftar inventaris.');
-    }
-
-    return List<dynamic>.from(body['data'] ?? []);
+    return _dataList(json);
   }
 
   static Future<List<dynamic>> getLowStockProducts() async {
-    final response = await http
-        .get(
-          Uri.parse('$baseUrl/manager/inventory/low-stock'),
-          headers: _headers,
-        )
-        .timeout(requestTimeout);
+    final json = await _json(
+      'GET',
+      '/manager/inventory/low-stock',
+      fallback: 'Gagal mengambil stok menipis.',
+    );
 
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal mengambil stok menipis.');
-    }
-
-    return List<dynamic>.from(body['data'] ?? []);
+    return _dataList(json);
   }
 
   static Future<List<dynamic>> getInventoryMovements({
     int? productId,
     String? type,
   }) async {
-    final queryParameters = <String, String>{};
+    final query = <String, String>{
+      'product_id': ?productId?.toString(),
+      if (type != null && type.trim().isNotEmpty) 'type': type.trim(),
+    };
 
-    if (productId != null) {
-      queryParameters['product_id'] = productId.toString();
-    }
-
-    if (type != null && type.trim().isNotEmpty) {
-      queryParameters['type'] = type.trim();
-    }
-
-    final uri = Uri.parse('$baseUrl/manager/inventory-movements').replace(
-      queryParameters: queryParameters.isEmpty ? null : queryParameters,
+    final json = await _json(
+      'GET',
+      '/manager/inventory-movements',
+      query: query,
+      fallback: 'Gagal mengambil riwayat inventaris.',
     );
 
-    final response = await http
-        .get(uri, headers: _headers)
-        .timeout(requestTimeout);
-
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal mengambil riwayat inventaris.');
-    }
-
-    final data = body['data'];
-
-    // Endpoint menggunakan paginate(30),
-    // sehingga Laravel mengembalikan object pagination.
-    if (data is Map && data['data'] is List) {
-      return List<dynamic>.from(data['data']);
-    }
-
-    if (data is List) {
-      return List<dynamic>.from(data);
-    }
-
-    return [];
+    // Endpoint memakai paginate(30); _dataList menangani kedua bentuk.
+    return _dataList(json);
   }
 
   static Future<Map<String, dynamic>> inventoryStockIn({
@@ -785,26 +793,17 @@ class ApiService {
     required int quantity,
     String? note,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse('$baseUrl/manager/inventory/products/$productId/stock-in'),
-          headers: _headers,
-          body: jsonEncode({
-            'quantity': quantity,
-            if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
-          }),
-        )
-        .timeout(requestTimeout);
+    final json = await _json(
+      'POST',
+      '/manager/inventory/products/$productId/stock-in',
+      body: {
+        'quantity': quantity,
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+      fallback: 'Gagal menambahkan stok.',
+    );
 
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal menambahkan stok.');
-    }
-
-    return Map<String, dynamic>.from(body['data'] ?? {});
+    return _dataMap(json);
   }
 
   static Future<Map<String, dynamic>> inventoryStockOut({
@@ -813,27 +812,18 @@ class ApiService {
     String type = 'out',
     String? note,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse('$baseUrl/manager/inventory/products/$productId/stock-out'),
-          headers: _headers,
-          body: jsonEncode({
-            'quantity': quantity,
-            'type': type,
-            if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
-          }),
-        )
-        .timeout(requestTimeout);
+    final json = await _json(
+      'POST',
+      '/manager/inventory/products/$productId/stock-out',
+      body: {
+        'quantity': quantity,
+        'type': type,
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+      fallback: 'Gagal mengurangi stok.',
+    );
 
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal mengurangi stok.');
-    }
-
-    return Map<String, dynamic>.from(body['data'] ?? {});
+    return _dataMap(json);
   }
 
   static Future<Map<String, dynamic>> inventoryAdjustment({
@@ -841,28 +831,17 @@ class ApiService {
     required int stock,
     String? note,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse(
-            '$baseUrl/manager/inventory/products/$productId/adjust-stock',
-          ),
-          headers: _headers,
-          body: jsonEncode({
-            'stock': stock,
-            if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
-          }),
-        )
-        .timeout(requestTimeout);
+    final json = await _json(
+      'POST',
+      '/manager/inventory/products/$productId/adjust-stock',
+      body: {
+        'stock': stock,
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+      fallback: 'Gagal menyesuaikan stok.',
+    );
 
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode < 200 ||
-        response.statusCode >= 300 ||
-        body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal menyesuaikan stok.');
-    }
-
-    return Map<String, dynamic>.from(body['data'] ?? {});
+    return _dataMap(json);
   }
 
   // ============================================================
@@ -870,95 +849,28 @@ class ApiService {
   // ============================================================
 
   static Future<List<Product>> getProducts() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/products'), headers: _headers)
-          .timeout(requestTimeout);
+    final json = await _json(
+      'GET',
+      '/products',
+      fallback: 'Gagal mengambil produk.',
+      timeoutMessage: 'Mengambil produk terlalu lama.',
+    );
 
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 401) {
-        await clearToken();
-
-        throw Exception('Sesi login sudah berakhir.');
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception(json['message'] ?? 'Gagal mengambil produk.');
-      }
-
-      if (json['success'] != true) {
-        throw Exception(json['message'] ?? 'Gagal mengambil produk.');
-      }
-
-      // ===================================================
-      // LOGIKA BARU UNTUK MENANGANI PAGINATION
-      // ===================================================
-      final responseData = json['data'];
-      List<dynamic> data = [];
-
-      if (responseData is Map && responseData['data'] is List) {
-        // Jika Laravel menggunakan paginate()
-        data = List<dynamic>.from(responseData['data']);
-      } else if (responseData is List) {
-        // Jika Laravel menggunakan get() biasa
-        data = List<dynamic>.from(responseData);
-      }
-
-      return data
-          .map((item) => Product.fromJson(Map<String, dynamic>.from(item)))
-          .toList();
-    } on TimeoutException {
-      throw Exception('Mengambil produk terlalu lama.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal mengambil produk.');
-    }
+    // _dataList menangani paginate() maupun get() biasa.
+    return _productList(_dataList(json));
   }
 
-  // ============================================================
-  // PRODUCT DETAIL
-  // ============================================================
-
   static Future<Product> getProduct(int id) async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/products/$id'), headers: _headers)
-          .timeout(requestTimeout);
+    final json = await _json(
+      'GET',
+      '/products/$id',
+      fallback: 'Gagal mengambil detail produk.',
+      timeoutMessage: 'Mengambil detail produk terlalu lama.',
+    );
 
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 401) {
-        await clearToken();
-
-        throw Exception('Sesi login sudah berakhir.');
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception(json['message'] ?? 'Gagal mengambil detail produk.');
-      }
-
-      if (json['success'] != true) {
-        throw Exception(json['message'] ?? 'Gagal mengambil detail produk.');
-      }
-
-      return Product.fromJson(Map<String, dynamic>.from(json['data']));
-    } on TimeoutException {
-      throw Exception('Mengambil detail produk terlalu lama.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal mengambil detail produk.');
-    }
+    return Product.fromJson(
+      _requireDataMap(json, 'Data detail produk tidak valid.'),
+    );
   }
 
   // ============================================================
@@ -966,101 +878,36 @@ class ApiService {
   // ============================================================
 
   static Future<List<Map<String, dynamic>>> getOrders() async {
-    if (authToken == null || authToken!.isEmpty) {
-      throw Exception('Kamu belum login. Silakan login terlebih dahulu.');
-    }
+    final json = await _json(
+      'GET',
+      '/orders',
+      requireAuth: true,
+      fallback: 'Gagal mengambil riwayat pesanan.',
+      timeoutMessage: 'Mengambil pesanan terlalu lama.',
+    );
 
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/orders'), headers: _headers)
-          .timeout(requestTimeout);
-
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 401) {
-        await clearToken();
-
-        throw Exception('Sesi login sudah berakhir. Silakan login kembali.');
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception(json['message'] ?? 'Gagal mengambil riwayat pesanan.');
-      }
-
-      if (json['success'] != true) {
-        throw Exception(json['message'] ?? 'Gagal mengambil riwayat pesanan.');
-      }
-
-      final List<dynamic> data = json['data'] ?? [];
-
-      return data.map((item) => Map<String, dynamic>.from(item)).toList();
-    } on TimeoutException {
-      throw Exception('Mengambil pesanan terlalu lama.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal mengambil riwayat pesanan.');
-    }
+    return _mapList(_dataList(json));
   }
-
-  // ============================================================
-  // CREATE ORDER
-  // ============================================================
 
   static Future<Map<String, dynamic>> createOrder({
     required String pickupMethod,
     required String paymentMethod,
     required List<Map<String, dynamic>> items,
   }) async {
-    if (authToken == null || authToken!.isEmpty) {
-      throw Exception('Kamu belum login. Silakan login terlebih dahulu.');
-    }
+    final json = await _json(
+      'POST',
+      '/orders',
+      requireAuth: true,
+      body: {
+        'pickup_method': pickupMethod,
+        'payment_method': paymentMethod,
+        'items': items,
+      },
+      fallback: 'Gagal membuat pesanan.',
+      timeoutMessage: 'Pembuatan pesanan terlalu lama.',
+    );
 
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/orders'),
-            headers: _headers,
-            body: jsonEncode({
-              'pickup_method': pickupMethod,
-              'payment_method': paymentMethod,
-              'items': items,
-            }),
-          )
-          .timeout(requestTimeout);
-
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 401) {
-        await clearToken();
-
-        throw Exception('Sesi login sudah berakhir. Silakan login kembali.');
-      }
-
-      if (response.statusCode != 201) {
-        throw Exception(json['message'] ?? 'Gagal membuat pesanan.');
-      }
-
-      if (json['success'] != true) {
-        throw Exception(json['message'] ?? 'Gagal membuat pesanan.');
-      }
-
-      return Map<String, dynamic>.from(json['data'] ?? {});
-    } on TimeoutException {
-      throw Exception('Pembuatan pesanan terlalu lama.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal membuat pesanan.');
-    }
+    return _dataMap(json);
   }
 
   // ============================================================
@@ -1068,38 +915,30 @@ class ApiService {
   // ============================================================
 
   static Future<List<Map<String, dynamic>>> getManagerOrders() async {
-    final response = await http
-        .get(Uri.parse('$baseUrl/manager/orders'), headers: _headers)
-        .timeout(requestTimeout);
+    final json = await _json(
+      'GET',
+      '/manager/orders',
+      fallback: 'Gagal mengambil pesanan.',
+    );
 
-    final decoded = _decodeResponse(response);
-
-    final data = decoded['data'];
-
-    if (data is! List) {
-      throw Exception('Data pesanan manager tidak valid.');
-    }
-
-    return data.map((item) => Map<String, dynamic>.from(item)).toList();
+    return _mapList(
+      _dataList(json, invalidMessage: 'Data pesanan manager tidak valid.'),
+    );
   }
 
-  // ============================================================
-  // MANAGER ORDER STATUS
-  // ============================================================
-
+  /// Sekarang melempar [ApiException] kalau gagal (sebelumnya diam-diam
+  /// mengembalikan body error sehingga UI menampilkan "berhasil").
+  /// Return value tetap body response penuh seperti sebelumnya.
   static Future<Map<String, dynamic>> updateManagerOrderStatus({
     required int orderId,
     required String status,
   }) async {
-    final response = await http
-        .patch(
-          Uri.parse('$baseUrl/manager/orders/$orderId/status'),
-          headers: _headers,
-          body: jsonEncode({'status': status}),
-        )
-        .timeout(requestTimeout);
-
-    return _decodeResponse(response);
+    return _json(
+      'PATCH',
+      '/manager/orders/$orderId/status',
+      body: {'status': status},
+      fallback: 'Gagal mengubah status pesanan.',
+    );
   }
 
   // ============================================================
@@ -1107,84 +946,28 @@ class ApiService {
   // ============================================================
 
   static Future<List<Map<String, dynamic>>> getCategories() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/categories'), headers: _headers)
-          .timeout(requestTimeout);
+    final json = await _json(
+      'GET',
+      '/categories',
+      fallback: 'Gagal mengambil kategori.',
+      timeoutMessage: 'Mengambil kategori terlalu lama.',
+    );
 
-      final json = _decodeResponse(response);
-
-      if (response.statusCode == 401) {
-        await clearToken();
-
-        throw Exception('Sesi login sudah berakhir.');
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception(json['message'] ?? 'Gagal mengambil kategori.');
-      }
-
-      if (json['success'] != true) {
-        throw Exception(json['message'] ?? 'Gagal mengambil kategori.');
-      }
-
-      final List<dynamic> data = json['data'] ?? [];
-
-      return data.map((item) => Map<String, dynamic>.from(item)).toList();
-    } on TimeoutException {
-      throw Exception('Mengambil kategori terlalu lama.');
-    } on http.ClientException {
-      throw Exception('Tidak dapat terhubung ke server.');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-
-      throw Exception('Gagal mengambil kategori.');
-    }
-  }
-
-  // ============================================================
-  // RESPONSE DECODER
-  // ============================================================
-
-  static Map<String, dynamic> _decodeResponse(http.Response response) {
-    if (response.body.isEmpty) {
-      return {};
-    }
-
-    try {
-      final decoded = jsonDecode(response.body);
-
-      if (decoded is Map<String, dynamic>) {
-        return decoded;
-      }
-
-      return {};
-    } catch (_) {
-      throw Exception('Server mengirim response yang tidak valid.');
-    }
+    return _mapList(_dataList(json));
   }
 
   // ============================================================
   // CONSIGNMENT (KONSINYASI)
   // ============================================================
 
-  // 1. Fungsi menyetujui TOS
-  static Future<Map<String, dynamic>> agreeTos() async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/consignment/tos'),
-      headers: _headers, // Langsung gunakan bawaan _headers
+  static Future<Map<String, dynamic>> agreeTos() {
+    return _json(
+      'POST',
+      '/consignment/tos',
+      fallback: 'Gagal menyetujui TOS.',
     );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Gagal menyetujui TOS: ${response.body}');
-    }
   }
 
-  // 2. Fungsi Upload Produk Konsinyasi (Mendukung Web via bytes)
   static Future<Map<String, dynamic>> submitConsignmentProduct({
     required String name,
     required String description,
@@ -1192,68 +975,57 @@ class ApiService {
     required String stock,
     required List<int> imageBytes,
     required String imageName,
-  }) async {
-    var request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/consignment/products'),
+  }) {
+    return _multipart(
+      '/consignment/products',
+      fallback: 'Gagal mengunggah produk.',
+      fields: {
+        'name': name,
+        'description': description,
+        'price': price,
+        'stock': stock,
+      },
+      files: [
+        http.MultipartFile.fromBytes('image', imageBytes, filename: imageName),
+      ],
     );
-
-    request.headers.addAll(_headers); // Langsung gunakan bawaan _headers
-
-    request.fields['name'] = name;
-    request.fields['description'] = description;
-    request.fields['price'] = price;
-    request.fields['stock'] = stock;
-
-    var multipartFile = http.MultipartFile.fromBytes(
-      'image',
-      imageBytes,
-      filename: imageName,
-    );
-    request.files.add(multipartFile);
-
-    var streamedResponse = await request.send();
-    var response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Gagal mengunggah produk: ${response.body}');
-    }
   }
 
-  // 3. Fungsi Mengambil Daftar Produk Pending (Khusus Admin)
   static Future<List<dynamic>> getPendingProducts() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/manager/consignment/products/pending'),
-      headers: _headers, // Langsung gunakan bawaan _headers
+    final json = await _json(
+      'GET',
+      '/manager/consignment/products/pending',
+      fallback: 'Gagal memuat produk pending.',
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['data'];
-    } else {
-      throw Exception('Gagal memuat produk pending: ${response.body}');
-    }
+    return _dataList(json);
   }
 
-  // 4. Fungsi Verifikasi Produk (Setujui / Tolak)
   static Future<Map<String, dynamic>> verifyProduct({
     required int productId,
     required String status,
-  }) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/manager/consignment/products/$productId/verify'),
-      headers: _headers, // Langsung gunakan bawaan _headers
-      body: jsonEncode({'status': status}),
+  }) {
+    return _json(
+      'PUT',
+      '/manager/consignment/products/$productId/verify',
+      body: {'status': status},
+      fallback: 'Gagal memverifikasi produk.',
+    );
+  }
+
+  static Future<List<dynamic>> getMyConsignmentProducts() async {
+    final json = await _json(
+      'GET',
+      '/consignment/my-products',
+      fallback: 'Gagal memuat produk saya.',
     );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Gagal memverifikasi produk: ${response.body}');
-    }
+    return _dataList(json);
   }
+
+  // ============================================================
+  // ADVERTISEMENTS
+  // ============================================================
 
   static Future<void> submitAdvertisement({
     required String title,
@@ -1263,95 +1035,59 @@ class ApiService {
     required Uint8List imageBytes,
     required String imageName,
   }) async {
-    var request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/advertisements/submit'),
+    await _multipart(
+      '/advertisements/submit',
+      fallback: 'Gagal mengajukan iklan.',
+      fields: {
+        'title': title,
+        'target_url': targetUrl,
+        'package_type': packageType,
+        'payment_method': paymentMethod,
+      },
+      files: [
+        http.MultipartFile.fromBytes('image', imageBytes, filename: imageName),
+      ],
     );
-
-    // Langsung gunakan _headers yang sudah otomatis mengurus Authorization token
-    request.headers.addAll(_headers);
-
-    request.fields['title'] = title;
-    request.fields['target_url'] = targetUrl;
-    request.fields['package_type'] = packageType;
-    request.fields['payment_method'] = paymentMethod;
-
-    request.files.add(
-      http.MultipartFile.fromBytes('image', imageBytes, filename: imageName),
-    );
-
-    var streamedResponse = await request.send().timeout(requestTimeout);
-    var response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Gagal mengajukan iklan: ${response.body}');
-    }
   }
 
-  // Mengambil daftar iklan yang masih pending (butuh verifikasi)
+  /// Daftar iklan yang menunggu verifikasi.
   static Future<List<dynamic>> getPendingAds() async {
-    final response = await http
-        .get(
-          Uri.parse('$baseUrl/manager/advertisements/pending'),
-          headers: _headers,
-        )
-        .timeout(requestTimeout);
+    final json = await _json(
+      'GET',
+      '/manager/advertisements/pending',
+      fallback: 'Gagal memuat antrean iklan.',
+    );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['data'] ?? [];
-    } else {
-      throw Exception('Gagal memuat antrean iklan: ${response.body}');
-    }
+    return _dataList(json);
   }
 
-  // Memverifikasi iklan (Setujui / Tolak)
+  /// [action]: 'approve' atau 'reject'.
   static Future<Map<String, dynamic>> verifyAd({
     required int adId,
-    required String action, // 'approve' atau 'reject'
-  }) async {
-    final response = await http
-        .put(
-          Uri.parse('$baseUrl/manager/advertisements/$adId/verify'),
-          headers: _headers,
-          body: jsonEncode({'action': action}),
-        )
-        .timeout(requestTimeout);
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Gagal memverifikasi iklan: ${response.body}');
-    }
+    required String action,
+  }) {
+    return _json(
+      'PUT',
+      '/manager/advertisements/$adId/verify',
+      body: {'action': action},
+      fallback: 'Gagal memverifikasi iklan.',
+    );
   }
 
+  /// Route publik. Kalau gagal dikembalikan list kosong supaya tampilan
+  /// Home tidak rusak hanya karena iklan tidak termuat.
   static Future<List<dynamic>> getActiveAds() async {
-    // Ingat, route ini bersifat public di api.php
-    final response = await http
-        .get(
-          Uri.parse('$baseUrl/advertisements'),
-          headers: {'Accept': 'application/json'},
-        )
-        .timeout(requestTimeout);
+    try {
+      final json = await _json(
+        'GET',
+        '/advertisements',
+        isPublic: true,
+        fallback: 'Gagal memuat iklan.',
+      );
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return json['data'] ?? [];
-    } else {
-      return []; // Return list kosong jika gagal agar tidak merusak tampilan Home
-    }
-  }
-
-  static Future<List<dynamic>> getMyConsignmentProducts() async {
-    final response = await http
-        .get(Uri.parse('$baseUrl/consignment/my-products'), headers: _headers)
-        .timeout(requestTimeout);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['data'] ?? [];
-    } else {
-      throw Exception('Gagal memuat produk saya: ${response.body}');
+      return _dataList(json);
+    } on ApiException {
+      return <dynamic>[];
     }
   }
 }

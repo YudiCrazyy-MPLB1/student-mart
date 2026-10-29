@@ -12,6 +12,11 @@ class ManagerVerificationPage extends StatefulWidget {
 }
 
 class _ManagerVerificationPageState extends State<ManagerVerificationPage> {
+  /// setState yang aman dipanggil setelah `await` (halaman bisa sudah ditutup).
+  void _safeSetState(VoidCallback fn) {
+    if (mounted) setState(fn);
+  }
+
   List<dynamic> _pendingProducts = [];
   bool _isLoading = true;
 
@@ -22,17 +27,17 @@ class _ManagerVerificationPageState extends State<ManagerVerificationPage> {
   }
 
   Future<void> _fetchPendingProducts() async {
-    setState(() => _isLoading = true);
+    _safeSetState(() => _isLoading = true);
     try {
       // Memanggil fungsi dari ApiService
       final products = await ApiService.getPendingProducts();
-      setState(() {
+      _safeSetState(() {
         _pendingProducts = products;
       });
     } catch (e) {
       _showMessage(e.toString(), isError: true);
     } finally {
-      setState(() => _isLoading = false);
+      _safeSetState(() => _isLoading = false);
     }
   }
 
@@ -65,6 +70,7 @@ class _ManagerVerificationPageState extends State<ManagerVerificationPage> {
   }
 
   void _showMessage(String msg, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),

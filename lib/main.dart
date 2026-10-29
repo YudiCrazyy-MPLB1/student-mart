@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'api_service.dart';
+import 'app_navigator.dart';
 import 'auth_check_page.dart';
 import 'home_page.dart';
+import 'login_page.dart';
 import 'manager_dashboard_page.dart';
 import 'cart_controller.dart';
+import 'product_provider.dart';
+import 'auth_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,10 +18,14 @@ Future<void> main() async {
   await ApiService.loadToken();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => CartController(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ProductProvider()),
+        ChangeNotifierProvider(create: (context) => AuthProvider()..checkLoginStatus()),
+        ChangeNotifierProvider(create: (context) => CartController()),
+      ],
       child: const StudentMartApp(),
-    ),
+    )
   );
 }
 
@@ -27,6 +35,7 @@ class StudentMartApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Student Mart',
       theme: ThemeData(useMaterial3: true, fontFamily: 'Roboto'),
@@ -40,13 +49,19 @@ class RoleCheckPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tidak ada token.
-    if (ApiService.authToken == null || ApiService.authToken!.isEmpty) {
+    final auth = context.watch<AuthProvider>();
+    // Sesi sedang diperiksa (startup).
+    if (auth.isChecking) {
       return const AuthCheckPage();
     }
 
+    // Tidak ada sesi.
+    if (!auth.isAuthenticated) {
+      return const LoginPage();
+    }
+
     // Role manager
-    if (ApiService.userRole == 'manager') {
+    if (auth.role == 'manager') {
       return const ManagerDashboardPage();
     }
 

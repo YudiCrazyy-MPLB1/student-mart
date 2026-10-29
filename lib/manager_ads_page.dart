@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'utils.dart';
 
 class ManagerAdsPage extends StatefulWidget {
   const ManagerAdsPage({super.key});
@@ -10,6 +11,11 @@ class ManagerAdsPage extends StatefulWidget {
 }
 
 class _ManagerAdsPageState extends State<ManagerAdsPage> {
+  /// setState yang aman dipanggil setelah `await` (halaman bisa sudah ditutup).
+  void _safeSetState(VoidCallback fn) {
+    if (mounted) setState(fn);
+  }
+
   List<dynamic> _pendingAds = [];
   bool _isLoading = true;
 
@@ -20,25 +26,26 @@ class _ManagerAdsPageState extends State<ManagerAdsPage> {
   }
 
   Future<void> _fetchPendingAds() async {
-    setState(() => _isLoading = true);
+    _safeSetState(() => _isLoading = true);
     try {
       final ads = await ApiService.getPendingAds();
-      setState(() {
+      _safeSetState(() {
         _pendingAds = ads;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
     } finally {
-      setState(() => _isLoading = false);
+      _safeSetState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleVerify(int adId, String action) async {
     // Konfirmasi dialog sebelum aksi
     bool isApprove = action == 'approve';
-    bool? confirm = await showDialog(
+    bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(isApprove ? 'Setujui Iklan?' : 'Tolak Iklan?'),
@@ -66,11 +73,12 @@ class _ManagerAdsPageState extends State<ManagerAdsPage> {
       ),
     );
 
-    if (confirm != true) return;
+    if (confirm != true || !mounted) return;
 
-    setState(() => _isLoading = true);
+    _safeSetState(() => _isLoading = true);
     try {
       await ApiService.verifyAd(adId: adId, action: action);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -83,16 +91,12 @@ class _ManagerAdsPageState extends State<ManagerAdsPage> {
       );
       _fetchPendingAds(); // Refresh data
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
-      setState(() => _isLoading = false);
+      _safeSetState(() => _isLoading = false);
     }
-  }
-
-  // Format ke Rupiah
-  String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
   }
 
   // Format penamaan paket
@@ -251,7 +255,7 @@ class _ManagerAdsPageState extends State<ManagerAdsPage> {
                               'Paket: ${formatPackageName(ad['package_type'])}',
                             ),
                             Text(
-                              formatRupiah(ad['total_price']),
+                              AppUtils.formatRupiah(ad['total_price']),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,

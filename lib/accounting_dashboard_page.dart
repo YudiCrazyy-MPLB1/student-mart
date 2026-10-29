@@ -4,6 +4,7 @@ import 'api_service.dart';
 import 'inventory_page.dart';
 import 'inventory_movement_page.dart';
 import 'manager_product_import_page.dart';
+import 'utils.dart';
 
 class AccountingDashboardPage extends StatefulWidget {
   const AccountingDashboardPage({super.key});
@@ -44,13 +45,13 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
       if (!mounted) return;
 
       setState(() {
-        _totalProducts = _toInt(summary['total_products']);
+        _totalProducts = AppUtils.toInt(summary['total_products']);
 
-        _totalStock = _toInt(summary['total_stock']);
+        _totalStock = AppUtils.toInt(summary['total_stock']);
 
-        _lowStockProducts = _toInt(summary['low_stock_products']);
+        _lowStockProducts = AppUtils.toInt(summary['low_stock_products']);
 
-        _outOfStockProducts = _toInt(summary['out_of_stock_products']);
+        _outOfStockProducts = AppUtils.toInt(summary['out_of_stock_products']);
 
         _lowStockItems = lowStock;
 
@@ -64,20 +65,6 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
         _errorMessage = e.toString();
       });
     }
-  }
-
-  int _toInt(dynamic value) {
-    if (value is int) return value;
-
-    if (value is double) {
-      return value.toInt();
-    }
-
-    if (value is String) {
-      return int.tryParse(value) ?? 0;
-    }
-
-    return 0;
   }
 
   @override
@@ -348,9 +335,9 @@ class _AccountingDashboardPageState extends State<AccountingDashboardPage> {
   Widget _buildLowStockItem(dynamic item) {
     final name = item['name']?.toString() ?? 'Produk';
 
-    final stock = _toInt(item['stock']);
+    final stock = AppUtils.toInt(item['stock']);
 
-    final minimumStock = _toInt(item['minimum_stock']);
+    final minimumStock = AppUtils.toInt(item['minimum_stock']);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),

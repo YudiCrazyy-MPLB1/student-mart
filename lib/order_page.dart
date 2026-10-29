@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'utils.dart';
+import 'skeleton_widgets.dart';
 
 class OrderPage extends StatefulWidget {
   const OrderPage({super.key});
@@ -44,24 +46,6 @@ class _OrderPageState extends State<OrderPage> {
         isLoading = false;
       });
     }
-  }
-
-  String formatRupiah(dynamic value) {
-    final number = int.tryParse(value.toString()) ?? 0;
-
-    final text = number.toString();
-
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < text.length; i++) {
-      if (i > 0 && (text.length - i) % 3 == 0) {
-        buffer.write('.');
-      }
-
-      buffer.write(text[i]);
-    }
-
-    return 'Rp ${buffer.toString()}';
   }
 
   String formatStatus(String status) {
@@ -109,7 +93,7 @@ class _OrderPageState extends State<OrderPage> {
 
   Widget _buildBody() {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SkeletonList();
     }
 
     if (errorMessage != null) {
@@ -271,7 +255,7 @@ class _OrderPageState extends State<OrderPage> {
                     Expanded(child: Text('$name x$quantity')),
 
                     Text(
-                      formatRupiah(subtotal),
+                      AppUtils.formatRupiah(subtotal),
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -291,7 +275,7 @@ class _OrderPageState extends State<OrderPage> {
                 ),
 
                 Text(
-                  formatRupiah(total),
+                  AppUtils.formatRupiah(total),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

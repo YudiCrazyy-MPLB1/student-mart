@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'api_service.dart';
 import 'manager_order_page.dart';
 import 'manager_product_page.dart';
 import 'accounting_dashboard_page.dart';
-import 'login_page.dart';
+import 'auth_provider.dart';
 import 'sapaan_random.dart';
 import 'manager_verification_page.dart';
 import 'manager_ads_page.dart';
+import 'utils.dart';
 
 class ManagerDashboardPage extends StatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -72,17 +74,17 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
       if (!mounted) return;
 
       setState(() {
-        totalProducts = _toInt(statistics['total_products']);
+        totalProducts = AppUtils.toInt(statistics['total_products']);
 
-        totalCategories = _toInt(statistics['total_categories']);
+        totalCategories = AppUtils.toInt(statistics['total_categories']);
 
-        totalOrders = _toInt(statistics['total_orders']);
+        totalOrders = AppUtils.toInt(statistics['total_orders']);
 
-        pendingOrders = _toInt(statistics['pending_orders']);
+        pendingOrders = AppUtils.toInt(statistics['pending_orders']);
 
-        lowStockProducts = _toInt(statistics['low_stock_products']);
+        lowStockProducts = AppUtils.toInt(statistics['low_stock_products']);
 
-        totalSales = _toInt(statistics['total_sales']);
+        totalSales = AppUtils.toInt(statistics['total_sales']);
 
         recentOrders = recent is List ? recent : [];
 
@@ -101,18 +103,6 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
     }
   }
 
-  int _toInt(dynamic value) {
-    if (value is int) {
-      return value;
-    }
-
-    if (value is double) {
-      return value.toInt();
-    }
-
-    return int.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
   String _cleanErrorMessage(dynamic error) {
     final message = error.toString();
 
@@ -126,23 +116,6 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   // ============================================================
   // FORMATTER
   // ============================================================
-
-  String _formatRupiah(dynamic value) {
-    final number = _toInt(value);
-
-    final text = number.toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < text.length; i++) {
-      if (i > 0 && (text.length - i) % 3 == 0) {
-        buffer.write('.');
-      }
-
-      buffer.write(text[i]);
-    }
-
-    return 'Rp ${buffer.toString()}';
-  }
 
   String _formatStatus(String status) {
     switch (status.toLowerCase()) {
@@ -227,15 +200,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
             tooltip: 'Logout',
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await ApiService.logout();
-
-              if (!mounted) return;
-
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
-              );
+              await context.read<AuthProvider>().logout();
             },
           ),
 
@@ -403,7 +368,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    _formatRupiah(totalSales),
+                    AppUtils.formatRupiah(totalSales),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -789,7 +754,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
         ? user['name']?.toString() ?? 'Pengguna'
         : 'Pengguna';
 
-    final total = _toInt(order['total']);
+    final total = AppUtils.toInt(order['total']);
 
     final status = order['status']?.toString() ?? 'unknown';
 
@@ -840,7 +805,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
                     const SizedBox(height: 4),
 
                     Text(
-                      _formatRupiah(total),
+                      AppUtils.formatRupiah(total),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ],

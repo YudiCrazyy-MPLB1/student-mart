@@ -75,8 +75,8 @@ class _TosDialogState extends State<TosDialog> {
                     controller: _scrollController,
                     child: const Text('''SYARAT DAN KETENTUAN PENITIPAN BARANG (KONSINYASI) STUDENT MART:
 
-1. Sistem Konsinyasi (Bagi Hasil)
-Pihak kantin, koperasi, atau pemasok yang menitipkan jualannya di aplikasi Student Mart dikenakan biaya sistem sebesar 1% dari total keuntungan bersih bulanan yang mereka dapatkan melalui Student Mart.
+1. Sistem Konsinyasi
+Pemasok menitipkan barang untuk dijualkan oleh Student Mart. Atas jasa penjualan dan penggunaan platform ini, Student Mart berhak mendapatkan biaya sistem sebesar 2% dari harga jual yang akan dipotong langsung dari total penjualan.
 
 2. Siklus Pembayaran (Payouts)
 Pencairan dana hasil penjualan dapat ditarik pada periode waktu yang telah disepakati melalui Admin Student Mart.

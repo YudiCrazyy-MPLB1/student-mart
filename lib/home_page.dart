@@ -3,19 +3,23 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:provider/provider.dart'; // Tambahkan ini
+import 'package:provider/provider.dart';
 
 import 'product_model.dart';
-import 'cart_controller.dart'; // Hanya impor class modelnya saja
+import 'cart_controller.dart';
 import 'cart_page.dart';
 import 'product_detail_page.dart';
+import 'skeleton_product_card.dart'; // Pastikan file ini sudah dibuat
+import 'product_provider.dart';
 import 'order_page.dart';
 import 'api_service.dart';
-import 'login_page.dart';
+import 'auth_provider.dart';
 import 'sapaan_random.dart';
 import 'supplier_dashboard_page.dart';
 import 'submit_advertisement_page.dart';
 import 'theme.dart' as theme;
+import 'utils.dart';
+import 'skeleton_widgets.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -40,13 +44,6 @@ class _HomePageState extends State<HomePage> {
   String selectedCategory = 'Semua';
 
   // =====================================================
-  // PRODUCTS
-  // =====================================================
-  List<Product> products = [];
-  bool isLoading = true;
-  String? errorMessage;
-
-  // =====================================================
   // ADVERTISEMENTS (IKLAN)
   // =====================================================
   List<dynamic> activeAds = [];
@@ -67,8 +64,11 @@ class _HomePageState extends State<HomePage> {
     custgreetings = SapaanCustRandom.generate();
     searchController.addListener(_searchUpdated);
     _loadAds();
-    _loadProducts();
     _loadCategories();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductProvider>().fetchProducts();
+    });
   }
 
   // =====================================================
@@ -98,18 +98,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   // =====================================================
-  // _goToLogin
-  // ====================================================
-
-  void _goToLogin() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
-  }
-
-  // =====================================================
   // LOAD DATA API
   // =====================================================
   Future<void> _loadAds() async {
@@ -125,36 +113,6 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       if (mounted) setState(() => isLoadingAds = false);
-    }
-  }
-
-  Future<void> _loadProducts() async {
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
-    }
-    try {
-      final data = await ApiService.getProducts();
-      if (!mounted) return;
-      setState(() {
-        products = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      String friendlyError(Object e) {
-        final text = e.toString();
-        return text.startsWith('Exception: ')
-            ? text.substring('Exception: '.length)
-            : 'Terjadi kesalahan. Coba lagi.';
-      }
-
-      setState(() {
-        errorMessage = friendlyError(e);
-        isLoading = false;
-      });
     }
   }
 
@@ -185,14 +143,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _refreshHome() async {
-    await Future.wait([_loadAds(), _loadProducts(), _loadCategories()]);
+    await context.read<ProductProvider>().fetchProducts(forceRefresh: true);
+    await Future.wait([_loadAds(), _loadCategories()]);
   }
 
   // =====================================================
   // KELOLA PRODUK
   // =====================================================
   List<Product> get filteredProducts {
-    return products.where((product) {
+    final productslist = context.watch<ProductProvider>().products;
+    return productslist.where((product) {
       final name = product.name.toLowerCase();
       final category = product.category.toLowerCase();
       final description = product.description.toLowerCase();
@@ -206,10 +166,6 @@ class _HomePageState extends State<HomePage> {
           category == selectedCategory.toLowerCase();
       return matchesSearch && matchesCategory;
     }).toList();
-  }
-
-  String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
   }
 
   void _addToCart(Product product) {
@@ -275,12 +231,8 @@ class _HomePageState extends State<HomePage> {
         (ApiService.authToken == null || ApiService.authToken!.isEmpty);
 
     if (sessionExpired) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sesi login berakhir. Silakan login kembali.'),
-        ),
-      );
-      _goToLogin();
+      // Reset sesi + snackbar + pindah ke login ditangani AuthProvider.
+      context.read<AuthProvider>().expireSession();
       return;
     }
     showModalBottomSheet(
@@ -294,7 +246,6 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Hilangkan const karena theme bukan konstan di waktu compile
                 CircleAvatar(
                   radius: 38,
                   backgroundColor: theme.paleGreen,
@@ -464,12 +415,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _logout() async {
-    try {
-      await ApiService.logout();
-    } catch (_) {}
-    if (!mounted) return;
-    context.read<CartController>().clearCart();
-    _goToLogin();
+    // AuthProvider: hapus token, kosongkan keranjang, lalu ke halaman login.
+    await context.read<AuthProvider>().logout();
   }
 
   // =====================================================
@@ -609,7 +556,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 6),
             Text(
-              formatRupiah(product.price),
+              AppUtils.formatRupiah(product.price),
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
@@ -654,10 +601,90 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildNativeAdCard(dynamic ad) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.paleGreen, 
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.brandGreen.withValues(alpha: 0.4), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: theme.darkGreen.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
+              child: ad['image'] != null
+                  ? Image.network(
+                      ApiService.getImageUrl(ad['image']),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Icon(Icons.campaign, size: 50, color: theme.textMuted),
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(Icons.campaign, size: 50, color: theme.textMuted),
+                    ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: theme.brandGreen,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'SPONSOR',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  ad['title'] ?? 'Promo Spesial',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: theme.textDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // =====================================================
   // MAIN HOME CONTENT (Ekstraksi untuk mempermudah Tab)
   // =====================================================
   Widget _buildMainHomeContent(List<Product> visibleProducts, bool showGrid) {
+    final productProvider = context.watch<ProductProvider>();
+
+    final nativeAds = activeAds.where((ad) => ad['package_type'] == '2_month_promo').toList();
+
+    final gridItems = AppUtils.insertNativeAds(visibleProducts, nativeAds, insertEvery: 4);
+    
     return RefreshIndicator(
       onRefresh: _refreshHome,
       child: CustomScrollView(
@@ -721,14 +748,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 20),
 
                   if (isLoadingAds)
-                    SizedBox(
-                      height: 160,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: theme.brandGreen,
-                        ),
-                      ),
-                    )
+                    const SkeletonBanner(height: 160)
                   else if (activeAds.isNotEmpty)
                     CarouselSlider(
                       options: CarouselOptions(
@@ -848,11 +868,7 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(
                     height: 105,
                     child: isLoadingCategories
-                        ? Center(
-                            child: CircularProgressIndicator(
-                              color: theme.brandGreen,
-                            ),
-                          )
+                        ? const SkeletonCategories()
                         : categories.isEmpty
                         ? const Center(
                             child: Text(
@@ -919,17 +935,10 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  if (isLoading)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 50),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: theme.brandGreen,
-                        ),
-                      ),
-                    )
-                  else if (errorMessage != null)
+                  
+                  // PENGGANTIAN CIRCULAR PROGRESS INDICATOR -> DIHAPUS DI SINI!
+                  
+                  if (productProvider.errorMessage != null)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.all(30),
@@ -951,7 +960,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              errorMessage!,
+                              productProvider.errorMessage!,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: theme.textMuted,
@@ -960,7 +969,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
-                              onPressed: _loadProducts,
+                              onPressed: () => productProvider.fetchProducts(forceRefresh: true),
                               icon: const Icon(Icons.refresh_rounded),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: theme.darkGreen,
@@ -980,7 +989,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     )
-                  else if (visibleProducts.isEmpty)
+                  else if (visibleProducts.isEmpty && !productProvider.isLoading)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 50),
                       child: Center(
@@ -1025,6 +1034,26 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+          
+          // BLOK SKELETON LOADING KITA TEMPATKAN DI SINI (SEBAGAI GRID)
+          if (productProvider.isLoading)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.72,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return const SkeletonProductCard();
+                  },
+                  childCount: 6, // Render 6 skeleton cards
+                ),
+              ),
+            ),
 
           if (showGrid)
             SliverPadding(
@@ -1037,8 +1066,17 @@ class _HomePageState extends State<HomePage> {
                   childAspectRatio: 0.72,
                 ),
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) => _buildProductCard(visibleProducts[index]),
-                  childCount: visibleProducts.length,
+                  (context, index) {
+                    final item = gridItems[index];
+                    
+                    // Cek apakah item ini Produk atau Iklan
+                    if (item is Product) {
+                      return _buildProductCard(item);
+                    } else {
+                      return _buildNativeAdCard(item['ad_data']);
+                    }
+                  },
+                  childCount: gridItems.length,
                 ),
               ),
             ),
@@ -1052,9 +1090,10 @@ class _HomePageState extends State<HomePage> {
   // =====================================================
   @override
   Widget build(BuildContext context) {
+    final productProvider = context.watch<ProductProvider>();
     final visibleProducts = filteredProducts;
     final showGrid =
-        !isLoading && errorMessage == null && visibleProducts.isNotEmpty;
+        !productProvider.isLoading && productProvider.errorMessage == null && visibleProducts.isNotEmpty;
 
     return Scaffold(
       backgroundColor: theme.pageBackground,

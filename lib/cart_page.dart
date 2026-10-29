@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'cart_controller.dart';
 import 'checkout_page.dart';
+import 'product_provider.dart';
+import 'utils.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -15,27 +17,43 @@ class _CartPageState extends State<CartPage> {
   @override
   void initState() {
     super.initState();
-
-    context.read<CartController>().addListener(_cartUpdated);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPrices());
   }
 
-  @override
-  void dispose() {
-    context.read<CartController>().removeListener(_cartUpdated);
-    super.dispose();
-  }
+  /// Harga & stok di keranjang adalah salinan saat produk ditambahkan.
+  /// Segarkan dari server saat keranjang dibuka, dan beri tahu user kalau ada
+  /// yang berubah. Gagal (offline dll.) diabaikan: checkout tetap divalidasi
+  /// ulang oleh server.
+  Future<void> _refreshPrices() async {
+    if (!mounted) return;
+    final cart = context.read<CartController>();
+    if (cart.items.isEmpty) return;
 
-  void _cartUpdated() {
-    setState(() {});
-  }
+    final products = context.read<ProductProvider>();
+    final messenger = ScaffoldMessenger.of(context);
 
-  String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
+    await products.fetchProducts(forceRefresh: true);
+    if (!mounted || products.errorMessage != null) return;
+
+    final notes = cart.syncWithProducts(products.products);
+    if (notes.isEmpty) return;
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(notes.join('\n')),
+          duration: const Duration(seconds: 5),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = context.read<CartController>().items;
+    // watch: halaman otomatis rebuild saat keranjang berubah, tanpa listener
+    // manual (yang berisiko error kalau context diakses di dispose()).
+    final cart = context.watch<CartController>();
+    final items = cart.items;
 
     return Scaffold(
       appBar: AppBar(
@@ -111,7 +129,7 @@ class _CartPageState extends State<CartPage> {
 
                                     const SizedBox(height: 4),
 
-                                    Text(formatRupiah(product.price)),
+                                    Text(AppUtils.formatRupiah(product.price)),
 
                                     const SizedBox(height: 10),
 
@@ -179,7 +197,7 @@ class _CartPageState extends State<CartPage> {
                                   const SizedBox(height: 8),
 
                                   Text(
-                                    formatRupiah(subtotal),
+                                    AppUtils.formatRupiah(subtotal),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -219,7 +237,7 @@ class _CartPageState extends State<CartPage> {
                             ),
                           ),
                           Text(
-                            formatRupiah(context.read<CartController>().total),
+                            AppUtils.formatRupiah(cart.total),
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,

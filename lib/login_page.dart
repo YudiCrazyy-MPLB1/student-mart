@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'api_service.dart';
-import 'manager_dashboard_page.dart';
-import 'home_page.dart';
+import 'package:provider/provider.dart';
+
+import 'api_exception.dart';
+import 'auth_provider.dart';
 import 'register_page.dart';
 import 'sapaan_random.dart';
 import 'theme.dart' as theme;
@@ -51,52 +52,38 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => isLoading = true);
 
-    try {
-      final data = await ApiService.login(email: email, password: password);
+    // Ambil messenger sebelum await: begitu login sukses, RoleCheckPage
+    // mengganti halaman ini sehingga `context` miliknya tidak berlaku lagi.
+    final messenger = ScaffoldMessenger.of(context);
+    final auth = context.read<AuthProvider>();
 
-      if (!mounted) return;
+    try {
+      final data = await auth.login(email: email, password: password);
 
       TextInput.finishAutofillContext(shouldSave: true);
 
       final dynamic userData = data['user'];
+      final userName =
+          userData is Map ? userData['name']?.toString() ?? 'Pengguna' : 'Pengguna';
 
-      String userName = 'Pengguna';
-      String role = 'student';
-
-      if (userData is Map) {
-        userName = userData['name']?.toString() ?? 'Pengguna';
-        role = userData['role']?.toString().toLowerCase() ?? 'student';
-      }
-
-      _showMessage('Selamat datang, $userName!');
-
-      await Future<void>.delayed(const Duration(milliseconds: 150));
-
-      if (!mounted) return;
-
-      if (role == 'manager') {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const ManagerDashboardPage()),
-          (route) => false,
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Selamat datang, $userName!'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: theme.brandGreen,
+          ),
         );
-      } else {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-          (route) => false,
-        );
-      }
+      // Tidak ada Navigator di sini: AuthProvider sudah berubah, dan
+      // RoleCheckPage memilih HomePage / ManagerDashboardPage.
     } catch (e) {
       if (!mounted) return;
 
-      String message = e.toString();
-
-      if (message.startsWith('Exception: ')) {
-        message = message.substring('Exception: '.length);
-      }
-
-      _showMessage(message, isError: true);
+      _showMessage(
+        e is ApiException ? e.message : 'Terjadi kesalahan. Coba lagi.',
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() => isLoading = false);

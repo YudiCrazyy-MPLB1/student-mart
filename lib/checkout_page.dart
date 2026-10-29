@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 
 import 'cart_controller.dart';
 import 'api_service.dart';
+import 'utils.dart';
+import 'api_exception.dart';
+import 'auth_provider.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -16,10 +19,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   String paymentMethod = 'Bayar di Kasir';
 
   bool isProcessing = false;
-
-  String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
-  }
 
   Future<void> createOrder() async {
     if (isProcessing) return; // Prevent multiple submissions
@@ -73,50 +72,37 @@ class _CheckoutPageState extends State<CheckoutPage> {
           );
         },
       );
-    } catch (e) {
+    } on ApiException catch (e) {
       if (!mounted) return;
+      setState(() => isProcessing = false);
 
-      setState(() {
-        isProcessing = false;
-      });
-
-      final errorText = e.toString();
-
-      if (errorText.contains('401') ||
-          errorText.toLowerCase().contains('unauthorized')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sesi telah habis. Silakan login kembali.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        // Tendang ke halaman login
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-        return;
-      }
-
-      if (errorText.contains('422') ||
-          errorText.toLowerCase().contains('stok')) {
+      if (e.statusCode == 401) {
+        // Reset sesi + pindah ke login (tidak berjalan dua kali kalau
+        // callback ApiService sudah menanganinya).
+        context.read<AuthProvider>().expireSession();
+      } else if (e.statusCode == 422) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            // Menampilkan pesan asli dari Laravel ("Stok Mie Ayam tidak mencukupi...")
-            content: Text(errorText.replaceFirst('Exception: ', '')),
-            backgroundColor: Colors.orange.shade800, // Warna orange/merah agar terlihat sebagai peringatan
+            content: Text(e.message),
+            backgroundColor: Colors.orange.shade800,
             duration: const Duration(seconds: 4),
           ),
         );
-
-        // (Opsional) Jika ingin me-refresh keranjang otomatis saat stok habis:
-        // cartController.clearCart();
-
-        return;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Checkout gagal: ${e.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isProcessing = false);
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Checkout gagal: ${errorText.replaceFirst('Exception: ', '')}',
-          ),
+          content: Text('Terjadi kesalahan sistem: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -195,7 +181,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     const SizedBox(height: 4),
 
                                     Text(
-                                      '${item.quantity} x ${formatRupiah(item.product.price)}',
+                                      '${item.quantity} x ${AppUtils.formatRupiah(item.product.price)}',
                                       style: TextStyle(
                                         color: Colors.grey.shade600,
                                       ),
@@ -205,7 +191,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               ),
 
                               Text(
-                                formatRupiah(
+                                AppUtils.formatRupiah(
                                   item.product.price * item.quantity,
                                 ),
                                 style: const TextStyle(
@@ -340,7 +326,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Subtotal'),
-                            Text(formatRupiah(total)),
+                            Text(AppUtils.formatRupiah(total)),
                           ],
                         ),
 
@@ -368,7 +354,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ),
 
                             Text(
-                              formatRupiah(total),
+                              AppUtils.formatRupiah(total),
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,

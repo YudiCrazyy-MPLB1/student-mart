@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'utils.dart';
+import 'skeleton_widgets.dart';
 
 class ManagerOrderPage extends StatefulWidget {
   const ManagerOrderPage({super.key});
@@ -102,12 +104,6 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
 
       return matchesSearch && matchesStatus;
     }).toList();
-  }
-
-  String formatPrice(dynamic value) {
-    final price = int.tryParse(value.toString()) ?? 0;
-
-    return 'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}';
   }
 
   String formatStatus(String status) {
@@ -272,7 +268,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(productName),
-                        subtitle: Text('$quantity x ${formatPrice(price)}'),
+                        subtitle: Text('$quantity x ${AppUtils.formatRupiah(price)}'),
                       );
                     })
                   else
@@ -288,7 +284,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        formatPrice(order['total']),
+                        AppUtils.formatRupiah(order['total']),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -406,7 +402,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
 
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const SkeletonList()
                 : visibleOrders.isEmpty
                 ? const Center(child: Text('Tidak ada pesanan.'))
                 : RefreshIndicator(
@@ -532,7 +528,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
                                                 const SizedBox(height: 2),
 
                                                 Text(
-                                                  '$quantity × ${formatPrice(price)}',
+                                                  '$quantity × ${AppUtils.formatRupiah(price)}',
                                                   style: TextStyle(
                                                     color: Colors.grey.shade600,
                                                     fontSize: 12,
@@ -543,7 +539,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
                                           ),
 
                                           Text(
-                                            formatPrice(subtotal),
+                                            AppUtils.formatRupiah(subtotal),
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -578,7 +574,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
                                     ),
 
                                     Text(
-                                      formatPrice(order['total']),
+                                      AppUtils.formatRupiah(order['total']),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,

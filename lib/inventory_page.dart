@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'utils.dart';
+import 'skeleton_widgets.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -46,26 +48,6 @@ class _InventoryPageState extends State<InventoryPage> {
     }
   }
 
-  int _toInt(dynamic value) {
-    if (value is int) return value;
-    if (value is double) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
-  String _formatRupiah(int value) {
-    final text = value.toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < text.length; i++) {
-      if (i > 0 && (text.length - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(text[i]);
-    }
-
-    return 'Rp ${buffer.toString()}';
-  }
-
   Future<void> _stockIn(Map<String, dynamic> product) async {
     final quantityController = TextEditingController();
     final noteController = TextEditingController();
@@ -83,7 +65,7 @@ class _InventoryPageState extends State<InventoryPage> {
         }
 
         await ApiService.inventoryStockIn(
-          productId: _toInt(product['id']),
+          productId: AppUtils.toInt(product['id']),
           quantity: quantity,
           note: noteController.text,
         );
@@ -108,7 +90,7 @@ class _InventoryPageState extends State<InventoryPage> {
         }
 
         await ApiService.inventoryStockOut(
-          productId: _toInt(product['id']),
+          productId: AppUtils.toInt(product['id']),
           quantity: quantity,
           type: 'out',
           note: noteController.text,
@@ -119,7 +101,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Future<void> _adjustment(Map<String, dynamic> product) async {
     final stockController = TextEditingController(
-      text: _toInt(product['stock']).toString(),
+      text: AppUtils.toInt(product['stock']).toString(),
     );
 
     final noteController = TextEditingController();
@@ -138,7 +120,7 @@ class _InventoryPageState extends State<InventoryPage> {
         }
 
         await ApiService.inventoryAdjustment(
-          productId: _toInt(product['id']),
+          productId: AppUtils.toInt(product['id']),
           stock: stock,
           note: noteController.text,
         );
@@ -161,7 +143,7 @@ class _InventoryPageState extends State<InventoryPage> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final stock = _toInt(product['stock']);
+            final stock = AppUtils.toInt(product['stock']);
 
             return AlertDialog(
               title: Text(title),
@@ -263,9 +245,9 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Widget _buildProductCard(Map<String, dynamic> product) {
     final name = product['name']?.toString() ?? 'Produk';
-    final stock = _toInt(product['stock']);
-    final minimumStock = _toInt(product['minimum_stock']);
-    final price = _toInt(product['price']);
+    final stock = AppUtils.toInt(product['stock']);
+    final minimumStock = AppUtils.toInt(product['minimum_stock']);
+    final price = AppUtils.toInt(product['price']);
 
     final isOutOfStock = stock <= 0;
     final isLowStock = stock > 0 && stock <= 30;
@@ -300,7 +282,7 @@ class _InventoryPageState extends State<InventoryPage> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(_formatRupiah(price)),
+                      Text(AppUtils.formatRupiah(price)),
                     ],
                   ),
                 ),
@@ -431,7 +413,7 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const SkeletonList()
                 : products.isEmpty
                 ? const Center(
                     child: Column(
