@@ -65,8 +65,8 @@ class SkeletonList extends StatelessWidget {
         padding: padding,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: itemCount,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => const _SkeletonListCard(),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (_, _) => const _SkeletonListCard(),
       ),
     );
   }
@@ -168,8 +168,8 @@ class SkeletonCategories extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (_, __) => const Column(
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (_, _) => const Column(
           children: [
             SkeletonBlock(width: 64, height: 64, radius: 18),
             SizedBox(height: 8),

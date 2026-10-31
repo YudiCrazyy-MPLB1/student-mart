@@ -82,7 +82,11 @@ class CartController extends ChangeNotifier {
 
     for (final item in List<CartItem>.of(_items)) {
       final fresh = byId[item.product.id];
-      if (fresh == null) continue;
+      if (fresh == null) {
+        _items.remove(item);
+        notes.add('${item.product.name} tidak tersedia lagi dan dihapus dari keranjang.');
+        continue;
+      }
 
       final name = fresh.name;
 

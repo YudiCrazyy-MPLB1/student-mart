@@ -56,6 +56,14 @@ class _HomePageState extends State<HomePage> {
   String searchQuery = '';
 
   // =====================================================
+  // FILTERED PRODUCTS (CACHED STATE)
+  // =====================================================
+  List<Product> _displayProducts = [];
+  List<Product>? _lastRawProducts;
+  String _lastSearchQuery = '';
+  String _lastSelectedCategory = '';
+
+  // =====================================================
   // INIT
   // =====================================================
   @override
@@ -93,6 +101,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       setState(() {
         searchQuery = searchController.text.trim().toLowerCase();
+        _applyFilter();
       });
     });
   }
@@ -133,6 +142,7 @@ class _HomePageState extends State<HomePage> {
       if (selectedCategory != 'Semua' && !categoryExists) {
         setState(() {
           selectedCategory = 'Semua';
+          _applyFilter();
         });
       }
     } catch (e) {
@@ -148,24 +158,48 @@ class _HomePageState extends State<HomePage> {
   }
 
   // =====================================================
-  // KELOLA PRODUK
+  // KELOLA & FILTER PRODUK (TEROPTIMALISASI)
   // =====================================================
-  List<Product> get filteredProducts {
-    final productslist = context.watch<ProductProvider>().products;
-    return productslist.where((product) {
-      final name = product.name.toLowerCase();
-      final category = product.category.toLowerCase();
-      final description = product.description.toLowerCase();
-      final matchesSearch =
-          searchQuery.isEmpty ||
-          name.contains(searchQuery) ||
-          category.contains(searchQuery) ||
-          description.contains(searchQuery);
-      final matchesCategory =
-          selectedCategory == 'Semua' ||
-          category == selectedCategory.toLowerCase();
-      return matchesSearch && matchesCategory;
+  List<Product> get filteredProducts => _displayProducts;
+
+  void _applyFilter([List<Product>? sourceProducts]) {
+    final rawProducts =
+        sourceProducts ?? context.read<ProductProvider>().products;
+
+    // Hindari komputasi ulang jika data produk dan filter tidak berubah
+    if (identical(rawProducts, _lastRawProducts) &&
+        searchQuery == _lastSearchQuery &&
+        selectedCategory == _lastSelectedCategory) {
+      return;
+    }
+
+    _lastRawProducts = rawProducts;
+    _lastSearchQuery = searchQuery;
+    _lastSelectedCategory = selectedCategory;
+
+    final query = searchQuery.trim().toLowerCase();
+    final categoryFilter = selectedCategory.toLowerCase();
+    final isCategoryAll = selectedCategory == 'Semua';
+
+    _displayProducts = rawProducts.where((product) {
+      final matchesCategory = isCategoryAll ||
+          product.category.toLowerCase() == categoryFilter;
+      if (!matchesCategory) return false;
+
+      if (query.isEmpty) return true;
+
+      return product.name.toLowerCase().contains(query) ||
+          product.category.toLowerCase().contains(query) ||
+          product.description.toLowerCase().contains(query);
     }).toList();
+  }
+
+  void _onCategorySelected(String categoryName) {
+    if (selectedCategory == categoryName) return;
+    setState(() {
+      selectedCategory = categoryName;
+      _applyFilter();
+    });
   }
 
   void _addToCart(Product product) {
@@ -216,130 +250,178 @@ class _HomePageState extends State<HomePage> {
   }
 
   // =====================================================
-  // DIALOG AKUN
+  // DIALOG AKUN (LANGSUNG TERBUKA TANPA DELAY)
   // =====================================================
-  Future<void> _showAccountDialog() async {
-    Map<String, dynamic>? user;
-    try {
-      user = await ApiService.getMe();
-    } catch (_) {
-      user = null;
-    }
-    if (!mounted) return;
-    final sessionExpired =
-        user == null &&
-        (ApiService.authToken == null || ApiService.authToken!.isEmpty);
+  void _showAccountDialog() {
+    final auth = context.read<AuthProvider>();
+    final cachedUser = auth.user;
 
-    if (sessionExpired) {
-      // Reset sesi + snackbar + pindah ke login ditangani AuthProvider.
-      context.read<AuthProvider>().expireSession();
-      return;
-    }
+    Map<String, dynamic>? user = cachedUser != null
+        ? {
+            'name': cachedUser.name,
+            'email': cachedUser.email,
+            'role': cachedUser.role,
+            if (cachedUser.phone != null) 'phone': cachedUser.phone,
+          }
+        : null;
+
+    bool isLoading = user == null;
+    bool isFetching = false;
+
+    // Buka Bottom Sheet secara instan tanpa menunggu network (0ms lag)
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 38,
-                  backgroundColor: theme.paleGreen,
-                  child: Icon(
-                    Icons.person_rounded,
-                    size: 42,
-                    color: theme.darkGreen,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (user?['name'] != null)
-                  Text(
-                    user?['name'].toString() ?? 'Pengguna Student Mart',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                const SizedBox(height: 4),
-                if (user?['email'] != null)
-                  Text(
-                    user!['email'].toString(),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: theme.textMuted),
-                  ),
-                const SizedBox(height: 20),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.person_outline),
-                  title: const Text('Profil Saya'),
-                  subtitle: const Text('Lihat informasi akun'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showProfileDialog(user);
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.storefront_rounded,
-                    color: theme.darkGreen,
-                  ),
-                  title: const Text('Consignor Dashboard'),
-                  subtitle: const Text('Daftar & jual produk titipanmu'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SupplierDashboardPage(),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            // Jika profil belum ada di cache, fetch di background
+            if (isLoading && user == null && !isFetching) {
+              isFetching = true;
+              ApiService.getMe().then((data) {
+                try {
+                  auth.syncFromApi(userData: data);
+                } catch (_) {}
+
+                if (!sheetContext.mounted) return;
+                setSheetState(() {
+                  user = data;
+                  isLoading = false;
+                });
+              }).catchError((_) {
+                if (!sheetContext.mounted) return;
+                final sessionExpired =
+                    ApiService.authToken == null ||
+                    ApiService.authToken!.isEmpty;
+
+                if (sessionExpired) {
+                  Navigator.pop(sheetContext);
+                  auth.expireSession();
+                  return;
+                }
+                setSheetState(() {
+                  isLoading = false;
+                });
+              });
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 38,
+                      backgroundColor: theme.paleGreen,
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: 42,
+                        color: theme.darkGreen,
                       ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.campaign_rounded,
-                    color: theme.brandGreen,
-                  ),
-                  title: const Text('Advertisement'),
-                  subtitle: const Text('Pasang iklan untuk promosimu'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SubmitAdvertisementPage(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text(
-                    'Logout',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  subtitle: const Text('Keluar dari akun Student Mart'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _confirmLogout();
-                  },
+                    const SizedBox(height: 12),
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4),
+                        child: SkeletonShimmer(
+                          child: Column(
+                            children: [
+                              SkeletonBlock(width: 160, height: 20, radius: 4),
+                              SizedBox(height: 8),
+                              SkeletonBlock(width: 210, height: 14, radius: 4),
+                            ],
+                          ),
+                        ),
+                      )
+                    else ...[
+                      Text(
+                        user?['name']?.toString() ?? 'Pengguna Student Mart',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (user?['email'] != null)
+                        Text(
+                          user!['email'].toString(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: theme.textMuted),
+                        ),
+                    ],
+                    const SizedBox(height: 20),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.person_outline),
+                      title: const Text('Profil Saya'),
+                      subtitle: const Text('Lihat informasi akun'),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        _showProfileDialog(user);
+                      },
+                    ),
+                    ListTile(
+                      leading: Icon(
+                        Icons.storefront_rounded,
+                        color: theme.darkGreen,
+                      ),
+                      title: const Text('Consignor Dashboard'),
+                      subtitle: const Text('Daftar & jual produk titipanmu'),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SupplierDashboardPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      leading: Icon(
+                        Icons.campaign_rounded,
+                        color: theme.brandGreen,
+                      ),
+                      title: const Text('Advertisement'),
+                      subtitle: const Text('Pasang iklan untuk promosimu'),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const SubmitAdvertisementPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.logout, color: Colors.red),
+                      title: const Text(
+                        'Logout',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: const Text('Keluar dari akun Student Mart'),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        _confirmLogout();
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
-
   void _showProfileDialog(Map<String, dynamic>? user) {
     if (!mounted) return;
     showDialog(
@@ -838,7 +920,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'PROMO STUDENT MART 🎉',
+                            'PROMO STUDENT MART \u{1F389}',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -888,9 +970,7 @@ class _HomePageState extends State<HomePage> {
                                   name: 'Semua',
                                   icon: Icons.apps,
                                   isSelected: selectedCategory == 'Semua',
-                                  onTap: () => setState(
-                                    () => selectedCategory = 'Semua',
-                                  ),
+                                  onTap: () => _onCategorySelected('Semua'),
                                 );
                               }
                               final category = categories[index - 1];
@@ -900,9 +980,7 @@ class _HomePageState extends State<HomePage> {
                                 name: categoryName,
                                 icon: _categoryIcon(categoryName),
                                 isSelected: selectedCategory == categoryName,
-                                onTap: () => setState(
-                                  () => selectedCategory = categoryName,
-                                ),
+                                onTap: () => _onCategorySelected(categoryName),
                               );
                             },
                           ),
@@ -1016,14 +1094,19 @@ class _HomePageState extends State<HomePage> {
                             ),
                             if (searchQuery.isNotEmpty)
                               TextButton(
-                                onPressed: () => searchController.clear(),
+                                onPressed: () {
+                                  searchController.clear();
+                                  setState(() {
+                                    searchQuery = '';
+                                    _applyFilter();
+                                  });
+                                },
                                 child: const Text('Hapus pencarian'),
                               ),
                             if (selectedCategory != 'Semua' &&
                                 searchQuery.isEmpty)
                               TextButton(
-                                onPressed: () =>
-                                    setState(() => selectedCategory = 'Semua'),
+                                onPressed: () => _onCategorySelected('Semua'),
                                 child: const Text('Lihat semua produk'),
                               ),
                           ],
@@ -1091,7 +1174,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final productProvider = context.watch<ProductProvider>();
-    final visibleProducts = filteredProducts;
+    // Sinkronkan filter jika data produk dari ProductProvider diperbarui
+    _applyFilter(productProvider.products);
+    final visibleProducts = _displayProducts;
     final showGrid =
         !productProvider.isLoading && productProvider.errorMessage == null && visibleProducts.isNotEmpty;
 

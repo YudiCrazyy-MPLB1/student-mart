@@ -4,11 +4,15 @@ import 'package:provider/provider.dart';
 import 'api_service.dart';
 import 'app_navigator.dart';
 import 'cart_controller.dart';
+import 'user_model.dart';
 
 /// Satu-satunya sumber kebenaran status login untuk UI.
 ///
 /// Semua halaman harus login/logout lewat provider ini (bukan langsung ke
 /// ApiService), supaya state, token, keranjang, dan navigasi selalu sinkron.
+///
+/// Data pengguna aktif tersedia lewat [user] — tidak perlu hit `/me` dari
+/// setiap halaman secara manual.
 class AuthProvider extends ChangeNotifier {
   AuthProvider() {
     // Satu jalur untuk sesi berakhir: ApiService memanggil ini sekali
@@ -20,6 +24,9 @@ class AuthProvider extends ChangeNotifier {
   bool _isChecking = true;
   String? _role;
 
+  /// Profil pengguna yang sedang login. null sebelum login atau sesudah logout.
+  UserProfile? _user;
+
   /// Mencegah reset + navigasi ke login berjalan dua kali untuk sesi yang
   /// sama (mis. callback ApiService DAN penanganan 401 di halaman).
   bool _leavingSession = false;
@@ -29,16 +36,32 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   String? get role => _role;
 
+  /// Profil pengguna aktif. Tersedia setelah login / startup berhasil.
+  UserProfile? get user => _user;
+
   /// Samakan state provider dengan token/role yang ada di ApiService.
-  void syncFromApi() {
+  ///
+  /// [userData] opsional — jika diisi, profil langsung disimpan dari data
+  /// respons login / /me tanpa perlu request tambahan.
+  void syncFromApi({Map<String, dynamic>? userData}) {
     final token = ApiService.authToken;
     if (token != null && token.isNotEmpty) {
       _isAuthenticated = true;
       _role = ApiService.userRole;
       _leavingSession = false;
+
+      // Simpan profil jika data user tersedia.
+      if (userData != null && userData.isNotEmpty) {
+        try {
+          _user = UserProfile.fromJson(userData);
+        } catch (_) {
+          // Jika parse gagal, biarkan _user tetap nilai lama.
+        }
+      }
     } else {
       _isAuthenticated = false;
       _role = null;
+      _user = null;
     }
     notifyListeners();
   }
@@ -51,16 +74,17 @@ class AuthProvider extends ChangeNotifier {
     await ApiService.loadToken();
 
     final token = ApiService.authToken;
+    Map<String, dynamic>? meData;
     if (token != null && token.isNotEmpty) {
       try {
-        await ApiService.getMe().timeout(const Duration(seconds: 5));
+        meData = await ApiService.getMe().timeout(const Duration(seconds: 5));
       } catch (_) {
         // 401: sudah ditangani ApiService. Lainnya: lanjut dengan token lokal.
       }
     }
 
     _isChecking = false;
-    syncFromApi();
+    syncFromApi(userData: meData);
   }
 
   /// Login. Melempar [ApiException] kalau gagal. Mengembalikan data response
@@ -70,7 +94,12 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) async {
     final data = await ApiService.login(email: email, password: password);
-    syncFromApi();
+
+    // Ekstrak objek user dari respons login dan simpan ke profil.
+    final dynamic rawUser = data['user'];
+    final userData =
+        rawUser is Map<String, dynamic> ? rawUser : null;
+    syncFromApi(userData: userData);
     return data;
   }
 
@@ -101,6 +130,7 @@ class AuthProvider extends ChangeNotifier {
   void _resetStateAndGoToLogin({String? message}) {
     _isAuthenticated = false;
     _role = null;
+    _user = null;
     notifyListeners();
 
     final navigator = navigatorKey.currentState;

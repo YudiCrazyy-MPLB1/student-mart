@@ -50,6 +50,7 @@ class RoleCheckPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+
     // Sesi sedang diperiksa (startup).
     if (auth.isChecking) {
       return const AuthCheckPage();
@@ -60,12 +61,13 @@ class RoleCheckPage extends StatelessWidget {
       return const LoginPage();
     }
 
-    // Role manager
-    if (auth.role == 'manager') {
-      return const ManagerDashboardPage();
+    // Routing berdasarkan role.
+    switch (auth.role) {
+      case 'manager':
+        return const ManagerDashboardPage();
+      default:
+        // Default: student / role tidak dikenal → halaman utama.
+        return const HomePage();
     }
-
-    // Default: student
-    return const HomePage();
   }
 }

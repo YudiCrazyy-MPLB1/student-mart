@@ -1,11 +1,13 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 import 'api_service.dart';
 import 'product_model.dart';
 import 'utils.dart';
+import 'product_provider.dart';
 import 'skeleton_widgets.dart';
 
 class ManagerProductPage extends StatefulWidget {
@@ -122,6 +124,11 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
 
       showMessage('Produk berhasil dinonaktifkan.');
 
+      // Invalidasi katalog siswa agar sinkron setelah perubahan.
+      if (mounted) {
+        context.read<ProductProvider>().fetchProducts(forceRefresh: true);
+      }
+
       await loadProducts();
     } catch (e) {
       if (!mounted) return;
@@ -141,6 +148,11 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
       if (!mounted) return;
 
       showMessage('Produk berhasil diaktifkan.');
+
+      // Invalidasi katalog siswa agar sinkron setelah perubahan.
+      if (mounted) {
+        context.read<ProductProvider>().fetchProducts(forceRefresh: true);
+      }
 
       await loadProducts();
     } catch (e) {
@@ -208,7 +220,17 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
     XFile? selectedImage;
     Uint8List? selectedImageBytes;
 
-    int? selectedCategoryId = product?.categoryId;
+    // Pastikan selectedCategoryId ada di list categories untuk mencegah
+    // crash assertion error (Red Screen) jika kategori telah dihapus di server.
+    final bool categoryExists = product?.categoryId != null &&
+        categories.any((cat) {
+          final dynamic rawId = cat['id'];
+          final int? catId =
+              rawId is int ? rawId : int.tryParse(rawId.toString());
+          return catId == product!.categoryId;
+        });
+
+    int? selectedCategoryId = categoryExists ? product?.categoryId : null;
 
     bool isActive = product?.isActive ?? true;
 
@@ -286,7 +308,16 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                           )
                         else
                           DropdownButtonFormField<int>(
-                            initialValue: selectedCategoryId,
+                            initialValue: (selectedCategoryId != null &&
+                                    categories.any((c) {
+                                      final dynamic r = c['id'];
+                                      final int? cid = r is int
+                                          ? r
+                                          : int.tryParse(r.toString());
+                                      return cid == selectedCategoryId;
+                                    }))
+                                ? selectedCategoryId
+                                : null,
 
                             decoration: const InputDecoration(
                               labelText: 'Kategori',
@@ -669,6 +700,13 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                                   ? 'Produk berhasil ditambahkan.'
                                   : 'Produk berhasil diperbarui.',
                             );
+
+                            // Invalidasi katalog siswa agar sinkron.
+                            if (mounted) {
+                              context
+                                  .read<ProductProvider>()
+                                  .fetchProducts(forceRefresh: true);
+                            }
 
                             await loadProducts();
                           } catch (e) {
