@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import 'dart:async';
 
@@ -33,6 +33,7 @@ class _HomePageState extends State<HomePage> {
 
   // Manajemen Navigasi Bawah
   int _bottomNavIndex = 0;
+  int _orderPageRefreshKey = 0;
 
   Timer? _debounceTimer;
 
@@ -1275,7 +1276,7 @@ class _HomePageState extends State<HomePage> {
           _buildMainHomeContent(visibleProducts, showGrid),
 
           // Index 1: Halaman Pesanan
-          const OrderPage(),
+          OrderPage(key: ValueKey(_orderPageRefreshKey)),
         ],
       ),
 

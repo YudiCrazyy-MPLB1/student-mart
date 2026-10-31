@@ -1,3 +1,6 @@
+﻿import 'dart:async';
+import 'package:provider/provider.dart';
+import 'product_provider.dart';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
@@ -60,6 +63,13 @@ class _ManagerVerificationPageState extends State<ManagerVerificationPage> {
             ? 'Produk disetujui dan berhasil tayang!'
             : 'Produk ditolak.',
       );
+
+      // Invalidasi & auto refresh katalog siswa jika produk disetujui
+      if (status == 'approved' && mounted) {
+        try {
+          context.read<ProductProvider>().fetchProducts(forceRefresh: true);
+        } catch (_) {}
+      }
 
       // Refresh daftar setelah produk diverifikasi
       _fetchPendingProducts();

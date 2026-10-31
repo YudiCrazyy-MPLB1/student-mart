@@ -1,3 +1,4 @@
+﻿import 'product_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -45,6 +46,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (!mounted) return;
 
       cart.clearCart();
+
+      // Auto refresh produk agar sisa stok langsung berkurang di katalog siswa
+      try {
+        context.read<ProductProvider>().fetchProducts(forceRefresh: true);
+      } catch (_) {}
 
       setState(() {
         isProcessing = false;

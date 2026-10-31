@@ -1,3 +1,4 @@
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
@@ -17,17 +18,36 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
   bool isLoading = true;
   String searchQuery = '';
   String selectedStatus = 'all';
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     loadOrders();
+    _startAutoRefreshTimer();
   }
 
-  Future<void> loadOrders() async {
-    setState(() {
-      isLoading = true;
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefreshTimer() {
+    _autoRefreshTimer?.cancel();
+    // Auto refresh setiap 15 detik agar pesanan baru dari siswa langsung masuk
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (!mounted) return;
+      loadOrders(silent: true);
     });
+  }
+
+  Future<void> loadOrders({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        isLoading = true;
+      });
+    }
 
     try {
       final result = await ApiService.getManagerOrders();
@@ -41,11 +61,13 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
     } catch (e) {
       if (!mounted) return;
 
-      setState(() {
-        isLoading = false;
-      });
+      if (!silent) {
+        setState(() {
+          isLoading = false;
+        });
 
-      showMessage('Gagal mengambil pesanan: $e', isError: true);
+        showMessage('Gagal mengambil pesanan: ', isError: true);
+      }
     }
   }
 

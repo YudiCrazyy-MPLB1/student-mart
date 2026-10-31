@@ -1,3 +1,4 @@
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
@@ -11,23 +12,60 @@ class OrderPage extends StatefulWidget {
   State<OrderPage> createState() => _OrderPageState();
 }
 
-class _OrderPageState extends State<OrderPage> {
+class _OrderPageState extends State<OrderPage> with WidgetsBindingObserver {
   List<Map<String, dynamic>> orders = [];
 
   bool isLoading = true;
   String? errorMessage;
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadOrders();
+    _startAutoRefreshTimer();
   }
 
-  Future<void> _loadOrders() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      // Auto refresh saat siswa membuka kembali aplikasi (mis. setelah bayar di e-wallet/bank)
+      _loadOrders(silent: true);
+    }
+  }
+
+  void _startAutoRefreshTimer() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (!mounted) return;
+      // Periksa apakah ada pesanan yang masih dalam proses
+      final hasActiveOrders = orders.any((o) {
+        final status = (o['status'] ?? '').toString().toLowerCase();
+        return status == 'pending' || status == 'processing';
+      });
+
+      // Jika ada pesanan aktif atau daftar masih kosong, refresh secara berkala di latar belakang
+      if (hasActiveOrders || orders.isEmpty) {
+        _loadOrders(silent: true);
+      }
     });
+  }
+
+  Future<void> _loadOrders({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+    }
 
     try {
       final result = await ApiService.getOrders();
@@ -37,14 +75,17 @@ class _OrderPageState extends State<OrderPage> {
       setState(() {
         orders = result;
         isLoading = false;
+        errorMessage = null;
       });
     } catch (e) {
       if (!mounted) return;
 
-      setState(() {
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
-        isLoading = false;
-      });
+      if (!silent) {
+        setState(() {
+          errorMessage = e.toString().replaceFirst('Exception: ', '');
+          isLoading = false;
+        });
+      }
     }
   }
 
