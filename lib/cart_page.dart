@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'api_service.dart';
@@ -110,7 +110,7 @@ class _CartPageState extends State<CartPage> {
                                       ? Image.network(
                                           ApiService.getImageUrl(product.image),
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => const Icon(
+                                          errorBuilder: (_, _, _) => const Icon(
                                             Icons.shopping_bag,
                                             size: 35,
                                             color: Colors.blue,

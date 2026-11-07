@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -239,11 +239,11 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (dialogContext) {
         bool isSaving = false;
 
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (dialogContext, setDialogState) {
             return AlertDialog(
               title: Text(product == null ? 'Tambah Produk' : 'Edit Produk'),
 
@@ -611,7 +611,7 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                   onPressed: isSaving
                       ? null
                       : () {
-                          Navigator.pop(context);
+                          Navigator.pop(dialogContext);
                         },
 
                   child: const Text('Batal'),
@@ -691,9 +691,11 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                               );
                             }
 
-                            if (!mounted) return;
+                            if (!dialogContext.mounted) return;
 
-                            Navigator.pop(context);
+                            Navigator.pop(dialogContext);
+
+                            if (!mounted) return;
 
                             showMessage(
                               product == null

@@ -380,6 +380,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   'assets/images/smart_logo.png',
                   height: 34,
                   fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
                 ),
                 const Text(
                   ' Account',
@@ -559,6 +560,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         fit: BoxFit.cover,
                         alignment: Alignment.centerRight,
                         filterQuality: FilterQuality.high,
+
                       ),
                     ),
                   ),
@@ -667,6 +669,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   child: Image.asset(
                                     'assets/images/student1.jpg',
                                     fit: BoxFit.cover,
+                                    filterQuality: FilterQuality.high,
                                   ),
                                 ),
                               ),
@@ -685,6 +688,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   child: Image.asset(
                                     'assets/images/student2.png',
                                     fit: BoxFit.cover,
+                                    filterQuality: FilterQuality.high,
                                   ),
                                 ),
                               ),

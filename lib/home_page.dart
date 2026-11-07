@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'dart:async';
 
@@ -1329,6 +1329,9 @@ class _HomePageState extends State<HomePage> {
             } else {
               // Jika menu home/pesanan ditekan, pindahkan IndexedStack
               setState(() {
+                if (index == 1) {
+                  _orderPageRefreshKey++;
+                }
                 _bottomNavIndex = index;
               });
             }

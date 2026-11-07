@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'dart:typed_data';
@@ -86,18 +86,23 @@ class _SubmitAdvertisementPageState extends State<SubmitAdvertisementPage> {
         imageName: _selectedImageName ?? 'banner_ads.png',
       );
 
-      // Pop first so the snackbar appears on the parent scaffold
+      if (!mounted) return;
+
+      final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Pengajuan iklan berhasil! Silakan selesaikan pembayaran.'),
           backgroundColor: Colors.teal,
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       _showMessage(e.toString(), isError: true);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

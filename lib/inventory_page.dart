@@ -196,6 +196,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   onPressed: loading
                       ? null
                       : () async {
+                          final messenger = ScaffoldMessenger.of(context);
                           setDialogState(() {
                             loading = true;
                           });
@@ -209,17 +210,17 @@ class _InventoryPageState extends State<InventoryPage> {
 
                             await _loadProducts();
 
-                            if (!mounted) return;
-
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(content: Text('$title berhasil.')),
                             );
                           } catch (e) {
-                            setDialogState(() {
-                              loading = false;
-                            });
+                            if (dialogContext.mounted) {
+                              setDialogState(() {
+                                loading = false;
+                              });
+                            }
 
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(content: Text(e.toString())),
                             );
                           }

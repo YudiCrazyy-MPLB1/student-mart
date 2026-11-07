@@ -1,4 +1,4 @@
-﻿import 'product_provider.dart';
+import 'product_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -169,7 +169,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                       ? Image.network(
                                           ApiService.getImageUrl(item.product.image),
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => const Icon(
+                                          errorBuilder: (_, _, _) => const Icon(
                                             Icons.shopping_bag_outlined,
                                             color: Colors.blue,
                                           ),

@@ -66,7 +66,10 @@ class Product {
       category: json['category'] is Map
           ? json['category']['name']?.toString() ?? ''
           : json['category']?.toString() ?? '',
-      categoryId: parseInt(json['category_id']),
+      categoryId: parseInt(
+        json['category_id'] ??
+            (json['category'] is Map ? json['category']['id'] : null),
+      ),
       description: json['description']?.toString() ?? '',
       stock: parseInt(json['stock']),
       image: json['image']?.toString(),
