@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
-import 'theme.dart' as theme;
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -11,14 +10,12 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
-  final kodeUndanganController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController kodeUndanganController = TextEditingController();
 
   bool obscurePassword = true;
-  bool obscureConfirmPassword = true;
   bool isLoading = false;
 
   @override
@@ -26,32 +23,28 @@ class _RegisterPageState extends State<RegisterPage> {
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
-    confirmPasswordController.dispose();
     kodeUndanganController.dispose();
     super.dispose();
   }
 
-  // REGISTER
+  // PROSES REGISTRASI
   Future<void> _register() async {
     if (isLoading) return;
 
     final name = nameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text;
-    final confirmation = confirmPasswordController.text;
     final kodeUndangan = kodeUndanganController.text.trim();
 
     if (name.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
-        confirmation.isEmpty ||
         kodeUndangan.isEmpty) {
       _showMessage('Semua kolom wajib diisi.', isError: true);
       return;
     }
 
     final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
     if (!emailRegex.hasMatch(email)) {
       _showMessage('Masukkan alamat email yang valid.', isError: true);
       return;
@@ -62,11 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    if (password != confirmation) {
-      _showMessage('Konfirmasi password tidak sama.', isError: true);
-      return;
-    }
-
+    FocusScope.of(context).unfocus();
     setState(() => isLoading = true);
 
     try {
@@ -74,29 +63,28 @@ class _RegisterPageState extends State<RegisterPage> {
         name: name,
         email: email,
         password: password,
-        passwordConfirmation: confirmation,
+        passwordConfirmation: password,
         kodeUndangan: kodeUndangan,
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
             'Pendaftaran berhasil! Silakan cek inbox/spam email kamu untuk verifikasi sebelum login.',
           ),
-          backgroundColor: theme.brandGreen,
+          backgroundColor: Color(0xFF1657D9),
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 5),
+          duration: Duration(seconds: 5),
         ),
       );
 
-      Navigator.pop(context);
+      _backToLogin();
     } catch (e) {
       if (!mounted) return;
 
       final message = e.toString().replaceFirst('Exception: ', '');
-
       _showMessage(message, isError: true);
     } finally {
       if (mounted) {
@@ -108,29 +96,34 @@ class _RegisterPageState extends State<RegisterPage> {
   void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red.shade700 : theme.brandGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor:
+              isError ? Colors.red.shade700 : const Color(0xFF1657D9),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   void _backToLogin() {
-    Navigator.pop(context);
+    if (isLoading) return;
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
   }
 
-  // INPUT FIELD
+  // INPUT FIELD KUSTOM SESUAI DESAIN MOCKUP
   Widget _inputField({
     required String label,
-    required String hint,
-    required IconData icon,
     required TextEditingController controller,
+    required bool isPassword,
+    required TextInputAction action,
+    String? hint,
     TextInputType keyboardType = TextInputType.text,
-    TextInputAction textInputAction = TextInputAction.next,
-    bool obscureText = false,
-    Widget? suffixIcon,
+    Iterable<String>? autofillHints,
     VoidCallback? onSubmitted,
   }) {
     return Column(
@@ -139,45 +132,67 @@ class _RegisterPageState extends State<RegisterPage> {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 13,
+            fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: theme.textDark,
+            color: Color(0xFF475569),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 7),
         TextField(
           controller: controller,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          obscureText: obscureText,
           enabled: !isLoading,
+          obscureText: isPassword && obscurePassword,
+          keyboardType: keyboardType,
+          textInputAction: action,
+          autofillHints: autofillHints,
           onSubmitted: (_) => onSubmitted?.call(),
+          style: const TextStyle(fontSize: 13.5, color: Color(0xFF1E293B)),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: theme.textMuted, fontSize: 14),
-            prefixIcon: Icon(icon, color: theme.brandGreen, size: 20),
-            suffixIcon: suffixIcon,
+            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+            suffixIcon: isPassword
+                ? IconButton(
+                    tooltip: obscurePassword
+                        ? 'Tampilkan password'
+                        : 'Sembunyikan password',
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            setState(() {
+                              obscurePassword = !obscurePassword;
+                            });
+                          },
+                    icon: Icon(
+                      obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 19,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                  )
+                : null,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: const Color(0xFFF1F5F9),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 17,
+              horizontal: 14,
+              vertical: 13,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: Color(0xFFDDE7E0)),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: Color(0xFFDDE7E0)),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: theme.brandGreen, width: 1.5),
+              borderRadius: BorderRadius.circular(10),
+              borderSide:
+                  const BorderSide(color: Color(0xFF1657D9), width: 1.5),
             ),
             disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: Color(0xFFE8EEE9)),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
           ),
         ),
@@ -185,114 +200,334 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // BRAND PANEL - DESKTOP
-  Widget _brandPanel() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 42),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
-        ),
-      ),
+  // FLOATING DOODLES / E-COMMERCE ICONS PADA BACKGROUND BIRU
+  Widget _buildDoodles() {
+    return IgnorePointer(
       child: Stack(
         children: [
+          // Top row doodles
           Positioned(
-            right: -100,
-            top: -90,
-            child: _circle(270, Colors.white.withValues(alpha: 0.06)),
+            top: 26,
+            right: 175,
+            child: Icon(
+              Icons.star_outline_rounded,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 36,
+            ),
           ),
           Positioned(
-            left: -100,
-            bottom: -120,
-            child: _circle(300, Colors.white.withValues(alpha: 0.06)),
+            top: 36,
+            right: 100,
+            child: Icon(
+              Icons.local_offer_outlined,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 32,
+            ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.storefront_rounded,
-                      color: theme.brandGreen,
-                      size: 27,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Student Mart',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.13),
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: const Icon(
-                  Icons.person_add_alt_1_rounded,
-                  size: 56,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 28),
-              const Text(
-                'Mulai Perjalananmu\nbersama Student Mart!',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 34,
-                  height: 1.25,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Buat akunmu dan nikmati pengalaman '
-                'belanja kebutuhan sekolah yang lebih '
-                'praktis, mudah, dan nyaman.',
-                style: TextStyle(
+          Positioned(
+            top: 24,
+            right: 28,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
                   color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 15,
-                  height: 1.8,
+                  width: 4,
                 ),
               ),
-              const SizedBox(height: 32),
-              _benefit(
-                Icons.shopping_bag_outlined,
-                'Pesan kebutuhan sekolah dengan mudah',
+            ),
+          ),
+          Positioned(
+            top: 60,
+            right: 16,
+            child: Icon(
+              Icons.account_balance_wallet_outlined,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 30,
+            ),
+          ),
+          // Left of card
+          Positioned(
+            top: 130,
+            left: 20,
+            child: Icon(
+              Icons.local_shipping_outlined,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 36,
+            ),
+          ),
+          Positioned(
+            top: 230,
+            left: 36,
+            child: Icon(
+              Icons.change_history_rounded,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 32,
+            ),
+          ),
+          // Right of card
+          Positioned(
+            top: 240,
+            right: 18,
+            child: Icon(
+              Icons.groups_outlined,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 30,
+            ),
+          ),
+          Positioned(
+            bottom: 155,
+            right: 20,
+            child: Icon(
+              Icons.star_rounded,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 32,
+            ),
+          ),
+          // Bottom area
+          Positioned(
+            bottom: 120,
+            left: 24,
+            child: Icon(
+              Icons.shopping_cart_outlined,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 32,
+            ),
+          ),
+          Positioned(
+            bottom: 40,
+            left: 80,
+            child: Icon(
+              Icons.local_offer_outlined,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 32,
+            ),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 170,
+            child: Icon(
+              Icons.change_history_rounded,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 28,
+            ),
+          ),
+          Positioned(
+            bottom: 24,
+            right: 70,
+            child: Icon(
+              Icons.local_shipping_outlined,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 34,
+            ),
+          ),
+          Positioned(
+            bottom: 20,
+            right: 14,
+            child: Icon(
+              Icons.shopping_cart_outlined,
+              color: Colors.white.withValues(alpha: 0.85),
+              size: 28,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // KARTU REGISTER (PERSIS DENGAN MOCKUP)
+  Widget _buildRegisterCard({required bool compact}) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 395),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 22 : 30,
+        vertical: compact ? 24 : 30,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // HEADER: Create Your [SMArt] Account
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Create Your ',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                Image.asset(
+                  'assets/images/smart_logo.png',
+                  height: 34,
+                  fit: BoxFit.contain,
+                ),
+                const Text(
+                  ' Account',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // NAVIGASI KEMBALI KE LOGIN: ← Login Page
+          Align(
+            alignment: Alignment.centerLeft,
+            child: InkWell(
+              onTap: isLoading ? null : _backToLogin,
+              borderRadius: BorderRadius.circular(6),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.arrow_back_rounded,
+                      size: 14,
+                      color: Color(0xFF1657D9),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Login Page',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1657D9),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 17),
-              _benefit(
-                Icons.access_time_rounded,
-                'Lebih praktis, hemat waktu saat istirahat',
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // FIELD NAMA LENGKAP
+          _inputField(
+            label: 'Nama Lengkap',
+            controller: nameController,
+            isPassword: false,
+            action: TextInputAction.next,
+            autofillHints: const [AutofillHints.name],
+          ),
+          const SizedBox(height: 14),
+
+          // FIELD EMAIL
+          _inputField(
+            label: 'Email',
+            controller: emailController,
+            isPassword: false,
+            keyboardType: TextInputType.emailAddress,
+            action: TextInputAction.next,
+            autofillHints: const [AutofillHints.email],
+          ),
+          const SizedBox(height: 14),
+
+          // FIELD PASSWORD
+          _inputField(
+            label: 'Password',
+            controller: passwordController,
+            isPassword: true,
+            action: TextInputAction.next,
+            autofillHints: const [AutofillHints.newPassword],
+          ),
+          const SizedBox(height: 14),
+
+          // FIELD KODE UNDANGAN
+          _inputField(
+            label: 'Kode Undangan',
+            controller: kodeUndanganController,
+            isPassword: false,
+            action: TextInputAction.done,
+            onSubmitted: _register,
+          ),
+          const SizedBox(height: 24),
+
+          // TOMBOL DAFTAR AKUN
+          SizedBox(
+            height: 48,
+            child: ElevatedButton(
+              onPressed: isLoading ? null : _register,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1657D9),
+                disabledBackgroundColor:
+                    const Color(0xFF1657D9).withValues(alpha: 0.6),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              const SizedBox(height: 17),
-              _benefit(
-                Icons.school_outlined,
-                'Dirancang untuk lingkungan sekolah',
-              ),
-              const Spacer(),
-              Text(
-                'Belanja cerdas, aktivitas lebih praktis.',
+              child: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Register Account',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // LINK LOGIN DI BAWAH TOMBOL
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Sudah punya akun?',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  fontSize: 12.5,
+                ),
+              ),
+              TextButton(
+                onPressed: isLoading ? null : _backToLogin,
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF1657D9),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Login di sini',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                  ),
                 ),
               ),
             ],
@@ -302,280 +537,50 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _circle(double size, Color color) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-    );
-  }
-
-  Widget _benefit(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.white, size: 22),
-        const SizedBox(width: 13),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // REGISTER FORM
-  Widget _registerForm({required bool compact}) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: IconButton(
-                onPressed: isLoading ? null : _backToLogin,
-                tooltip: 'Kembali ke Login',
-                icon: const Icon(Icons.arrow_back_rounded, size: 25),
-                style: IconButton.styleFrom(
-                  foregroundColor: theme.brandGreen,
-                  backgroundColor: theme.paleGreen,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (compact) ...[
-              Center(
-                child: Container(
-                  width: 66,
-                  height: 66,
-                  decoration: BoxDecoration(
-                    color: theme.paleGreen,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: const Icon(
-                    Icons.person_add_alt_1_rounded,
-                    color: theme.brandGreen,
-                    size: 34,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-            const Text(
-              'Buat Akun Baru',
-              style: TextStyle(
-                fontSize: 29,
-                height: 1.25,
-                fontWeight: FontWeight.bold,
-                color: theme.textDark,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Isi data berikut untuk mulai menggunakan '
-              'Student Mart.',
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.6,
-                color: theme.textMuted,
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            _inputField(
-              label: 'Nama Lengkap',
-              hint: 'Masukkan nama lengkap',
-              icon: Icons.person_outline_rounded,
-              controller: nameController,
-            ),
-            const SizedBox(height: 18),
-
-            _inputField(
-              label: 'Email',
-              hint: 'nama@email.com',
-              icon: Icons.mail_outline_rounded,
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 18),
-
-            _inputField(
-              label: 'Password',
-              hint: 'Minimal 8 karakter',
-              icon: Icons.lock_outline_rounded,
-              controller: passwordController,
-              obscureText: obscurePassword,
-              suffixIcon: IconButton(
-                tooltip: obscurePassword
-                    ? 'Tampilkan password'
-                    : 'Sembunyikan password',
-                onPressed: isLoading
-                    ? null
-                    : () {
-                        setState(() {
-                          obscurePassword = !obscurePassword;
-                        });
-                      },
-                icon: Icon(
-                  obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: theme.textMuted,
-                  size: 20,
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-
-            _inputField(
-              label: 'Konfirmasi Password',
-              hint: 'Masukkan ulang password',
-              icon: Icons.verified_user_outlined,
-              controller: confirmPasswordController,
-              obscureText: obscureConfirmPassword,
-              textInputAction: TextInputAction.next,
-              onSubmitted: _register,
-              suffixIcon: IconButton(
-                tooltip: obscureConfirmPassword
-                    ? 'Tampilkan password'
-                    : 'Sembunyikan password',
-                onPressed: isLoading
-                    ? null
-                    : () {
-                        setState(() {
-                          obscureConfirmPassword = !obscureConfirmPassword;
-                        });
-                      },
-                icon: Icon(
-                  obscureConfirmPassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: theme.textMuted,
-                  size: 20,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 18),
-            _inputField(
-              label: 'Kode Undangan',
-              hint: 'Masukkan kode undangan',
-              icon: Icons.vpn_key_outlined,
-              controller: kodeUndanganController,
-              textInputAction: TextInputAction.done,
-              onSubmitted: _register,
-            ),
-
-            const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.shield_outlined,
-                  color: theme.brandGreen,
-                  size: 18,
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    'Gunakan password yang aman dan jangan '
-                    'bagikan kepada orang lain.',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 12,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : _register,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.brandGreen,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: theme.brandGreen.withValues(
-                    alpha: 0.6,
-                  ),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        width: 23,
-                        height: 23,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.3,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Buat Akun',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(width: 9),
-                          Icon(Icons.arrow_forward_rounded, size: 19),
-                        ],
-                      ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: theme.pageBackground,
+      backgroundColor: const Color(0xFF5071FE),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final isDesktop = constraints.maxWidth >= 900;
+            final bool desktop = constraints.maxWidth >= 900;
 
-            if (isDesktop) {
+            if (desktop) {
               return Row(
                 children: [
+                  // SISI KIRI: ARTWORK RESMI HIESKENO & ZAKIAK (SMKN 4 JEMBER)
                   Expanded(
-                    flex: 5,
-                    child: SizedBox(
-                      height: double.infinity,
-                      child: _brandPanel(),
+                    flex: 11,
+                    child: Container(
+                      color: const Color(0xFF1556CE),
+                      child: Image.asset(
+                        'assets/images/brand_left_panel.png',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.centerRight,
+                      ),
                     ),
                   ),
+
+                  // SISI KANAN: BACKGROUND BIRU, DOODLE IKON, DAN KARTU REGISTER
                   Expanded(
-                    flex: 6,
+                    flex: 10,
                     child: Container(
-                      color: theme.pageBackground,
-                      height: double.infinity,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 44,
-                          vertical: 35,
-                        ),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: constraints.maxHeight - 70,
+                      color: const Color(0xFF5071FE),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _buildDoodles(),
+                          Center(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 24,
+                              ),
+                              child: _buildRegisterCard(compact: false),
+                            ),
                           ),
-                          child: _registerForm(compact: false),
-                        ),
+                        ],
                       ),
                     ),
                   ),
@@ -583,19 +588,119 @@ class _RegisterPageState extends State<RegisterPage> {
               );
             }
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: constraints.maxWidth < 400 ? 22 : 32,
-                vertical: 28,
-              ),
-              child: Column(
+            // TAMPILAN MOBILE / HP (< 900px)
+            return Container(
+              color: const Color(0xFF5071FE),
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  const SizedBox(height: 16),
-                  _registerForm(compact: true),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Student Mart • Belanja lebih praktis',
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                  // Background doodles
+                  _buildDoodles(),
+
+                  // Scrollable body agar aman di semua ukuran layar & saat keyboard terbuka
+                  SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        // HERO BANNER SMKN 4 JEMBER UNTUK HP
+                        SizedBox(
+                          height: constraints.maxWidth < 400 ? 190 : 220,
+                          width: double.infinity,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(
+                                'assets/images/brand_left_panel.png',
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topLeft,
+                              ),
+                              // Gradient fade lembut ke bawah agar menyatu dengan background biru
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      const Color(0xFF5071FE)
+                                          .withValues(alpha: 0.6),
+                                      const Color(0xFF5071FE),
+                                    ],
+                                    stops: const [0.35, 0.8, 1.0],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // KARTU REGISTER (MELAYANG DAN TUMPANG TINDIH ELEGAN KE HERO BANNER)
+                        Transform.translate(
+                          offset: const Offset(0, -22),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: constraints.maxWidth < 400 ? 16 : 22,
+                            ),
+                            child: _buildRegisterCard(compact: true),
+                          ),
+                        ),
+
+                        // FOOTER COPYRIGHT & AVATAR PENGEMBANG UNTUK HP
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/images/student1.jpg',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 7),
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/images/student2.png',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 9),
+                              const Text(
+                                'Copyright - Hieskeno & Zakiak',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

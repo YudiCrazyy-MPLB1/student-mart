@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'package:provider/provider.dart';
 
 import 'api_exception.dart';
 import 'auth_provider.dart';
 import 'register_page.dart';
 import 'sapaan_random.dart';
+import 'theme.dart' as theme;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,6 +18,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
+
   final TextEditingController passwordController = TextEditingController();
 
   bool obscurePassword = true;
@@ -49,6 +52,8 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => isLoading = true);
 
+    // Ambil messenger sebelum await: begitu login sukses, RoleCheckPage
+    // mengganti halaman ini sehingga `context` miliknya tidak berlaku lagi.
     final messenger = ScaffoldMessenger.of(context);
     final auth = context.read<AuthProvider>();
 
@@ -67,9 +72,11 @@ class _LoginPageState extends State<LoginPage> {
           SnackBar(
             content: Text('Selamat datang, $userName!'),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF1657D9),
+            backgroundColor: theme.brandGreen,
           ),
         );
+      // Tidak ada Navigator di sini: AuthProvider sudah berubah, dan
+      // RoleCheckPage memilih HomePage / ManagerDashboardPage.
     } catch (e) {
       if (!mounted) return;
 
@@ -93,7 +100,7 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(
           content: Text(message),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF1657D9),
+          backgroundColor: isError ? Colors.red.shade700 : theme.brandGreen,
         ),
       );
   }
@@ -107,11 +114,163 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // INPUT FIELD BERDASARKAN DESAIN BARU
+  // LOGO STUDENT MART
+  Widget _brandLogo({bool large = false}) {
+    final double iconSize = large ? 54 : 36;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: iconSize,
+          height: iconSize,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(large ? 16 : 11),
+          ),
+          child: Icon(
+            Icons.shopping_bag_rounded,
+            size: iconSize * 0.58,
+            color: theme.brandGreen,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Student Mart',
+              style: TextStyle(
+                fontSize: large ? 25 : 21,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.8,
+                color: large ? Colors.white : theme.darkGreen,
+              ),
+            ),
+            if (large)
+              const Text(
+                'Digital School Marketplace',
+                style: TextStyle(
+                  fontSize: 10,
+                  letterSpacing: 1.5,
+                  color: Colors.white70,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // PANEL BRANDING UNTUK DESKTOP
+  Widget _brandPanel() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 42),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [theme.brandGreen, theme.darkGreen],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(top: -50, right: -80, child: _decorationCircle(260)),
+          Positioned(bottom: -100, left: -90, child: _decorationCircle(300)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _brandLogo(large: true),
+              const Spacer(),
+              Container(
+                width: 76,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD166),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Text(
+                'Belanja mudah,\nsekolah lebih nyaman.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 42,
+                  height: 1.2,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.2,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Pesan kebutuhanmu dengan praktis '
+                'melalui Student Mart.',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  height: 1.7,
+                ),
+              ),
+              const SizedBox(height: 34),
+              _featureRow(
+                Icons.shopping_basket_outlined,
+                'Kebutuhan sekolah dalam satu tempat',
+              ),
+              const SizedBox(height: 17),
+              _featureRow(Icons.schedule_rounded, 'Pemesanan lebih praktis'),
+              const SizedBox(height: 17),
+              _featureRow(Icons.verified_user_outlined, 'Akses akun yang aman'),
+              const Spacer(),
+              const Text(
+                'STUDENT MART • SMK NEGERI 4 JEMBER',
+                style: TextStyle(
+                  color: Colors.white60,
+                  fontSize: 10,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _decorationCircle(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+          width: 35,
+        ),
+      ),
+    );
+  }
+
+  Widget _featureRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFFFFD166), size: 23),
+        const SizedBox(width: 13),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // FIELD EMAIL DAN PASSWORD
   Widget _inputField({
     required String label,
     required String hint,
     required TextEditingController controller,
+    required IconData icon,
     required bool isPassword,
     required TextInputAction action,
     TextInputType keyboardType = TextInputType.text,
@@ -124,12 +283,12 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF475569),
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF27352E),
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 9),
         TextField(
           controller: controller,
           enabled: !isLoading,
@@ -138,10 +297,11 @@ class _LoginPageState extends State<LoginPage> {
           textInputAction: action,
           autofillHints: autofillHints,
           onSubmitted: (_) => onSubmitted?.call(),
-          style: const TextStyle(fontSize: 13.5, color: Color(0xFF1E293B)),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF26352D)),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+            hintStyle: const TextStyle(color: Color(0xFF9AA69F), fontSize: 13),
+            prefixIcon: Icon(icon, size: 20, color: const Color(0xFF829188)),
             suffixIcon: isPassword
                 ? IconButton(
                     tooltip: obscurePassword
@@ -158,32 +318,32 @@ class _LoginPageState extends State<LoginPage> {
                       obscurePassword
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      size: 19,
-                      color: const Color(0xFF94A3B8),
+                      size: 20,
+                      color: const Color(0xFF829188),
                     ),
                   )
                 : null,
             filled: true,
-            fillColor: const Color(0xFFF1F5F9),
+            fillColor: const Color(0xFFFAFCFA),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
+              horizontal: 16,
+              vertical: 17,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF1657D9), width: 1.5),
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(color: theme.brandGreen, width: 1.5),
             ),
             disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
             ),
           ),
         ),
@@ -191,276 +351,184 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // FLOATING DOODLES / E-COMMERCE ICONS PADA BACKGROUND BIRU
-  Widget _buildDoodles() {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          // Top row doodles
-          Positioned(
-            top: 26,
-            right: 175,
-            child: Icon(Icons.star_outline_rounded, color: Colors.white.withValues(alpha: 0.85), size: 36),
-          ),
-          Positioned(
-            top: 36,
-            right: 100,
-            child: Icon(Icons.local_offer_outlined, color: Colors.white.withValues(alpha: 0.85), size: 32),
-          ),
-          Positioned(
-            top: 24,
-            right: 28,
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.85), width: 4),
+  // FORM LOGIN
+  Widget _loginForm({required bool compact}) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: AutofillGroup(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (compact) ...[
+                Center(child: _brandLogo()),
+                const SizedBox(height: 42),
+              ],
+              const Text(
+                'Selamat Datang di\nStudent Mart',
+                style: TextStyle(
+                  fontSize: 31,
+                  height: 1.25,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.9,
+                  color: Color(0xFF1E3026),
+                ),
               ),
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: 16,
-            child: Icon(Icons.account_balance_wallet_outlined, color: Colors.white.withValues(alpha: 0.85), size: 30),
-          ),
-          // Left of card
-          Positioned(
-            top: 130,
-            left: 20,
-            child: Icon(Icons.local_shipping_outlined, color: Colors.white.withValues(alpha: 0.85), size: 36),
-          ),
-          Positioned(
-            top: 230,
-            left: 36,
-            child: Icon(Icons.change_history_rounded, color: Colors.white.withValues(alpha: 0.85), size: 32),
-          ),
-          // Right of card
-          Positioned(
-            top: 240,
-            right: 18,
-            child: Icon(Icons.groups_outlined, color: Colors.white.withValues(alpha: 0.85), size: 30),
-          ),
-          Positioned(
-            bottom: 155,
-            right: 20,
-            child: Icon(Icons.star_rounded, color: Colors.white.withValues(alpha: 0.85), size: 32),
-          ),
-          // Bottom area
-          Positioned(
-            bottom: 120,
-            left: 24,
-            child: Icon(Icons.shopping_cart_outlined, color: Colors.white.withValues(alpha: 0.85), size: 32),
-          ),
-          Positioned(
-            bottom: 40,
-            left: 80,
-            child: Icon(Icons.local_offer_outlined, color: Colors.white.withValues(alpha: 0.85), size: 32),
-          ),
-          Positioned(
-            bottom: 30,
-            left: 170,
-            child: Icon(Icons.change_history_rounded, color: Colors.white.withValues(alpha: 0.85), size: 28),
-          ),
-          Positioned(
-            bottom: 24,
-            right: 70,
-            child: Icon(Icons.local_shipping_outlined, color: Colors.white.withValues(alpha: 0.85), size: 34),
-          ),
-          Positioned(
-            bottom: 20,
-            right: 14,
-            child: Icon(Icons.shopping_cart_outlined, color: Colors.white.withValues(alpha: 0.85), size: 28),
-          ),
-        ],
-      ),
-    );
-  }
+              const SizedBox(height: 12),
+              const Text(
+                'Masuk untuk melanjutkan belanja '
+                'kebutuhan sekolahmu.',
+                style: TextStyle(
+                  color: Color(0xFF78857C),
+                  fontSize: 14,
+                  height: 1.7,
+                ),
+              ),
+              const SizedBox(height: 32),
 
-  // KARTU LOGIN (PERSIS DENGAN KARTU PADA MOCKUP)
-  Widget _buildLoginCard({required bool compact}) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 390),
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 22 : 32,
-        vertical: compact ? 24 : 32,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: AutofillGroup(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // HEADER DENGAN LOGO SMART
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Login to Your ',
+              _inputField(
+                label: 'Email',
+                hint: 'emailanda@example.com',
+                controller: emailController,
+                icon: Icons.email_outlined,
+                isPassword: false,
+                keyboardType: TextInputType.emailAddress,
+                action: TextInputAction.next,
+                autofillHints: const [
+                  AutofillHints.username,
+                  AutofillHints.email,
+                ],
+              ),
+              const SizedBox(height: 22),
+
+              _inputField(
+                label: 'Password',
+                hint: PasswordHintRandomAwoawkaoakw.generate(),
+                controller: passwordController,
+                icon: Icons.lock_outline_rounded,
+                isPassword: true,
+                action: TextInputAction.done,
+                autofillHints: const [AutofillHints.password],
+                onSubmitted: _login,
+              ),
+              const Center(
+                child: Text(
+                  'STUDENT MART • BELANJA JADI PRAKTIS',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF9AA69F),
+                    fontSize: 9,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // --- PINDAHKAN KESINI (DI LUAR LOGO) ---
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'TEST DEPLOY FTP: v1.0.1 (BERHASIL)',
                     style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                      letterSpacing: -0.3,
+                      color: Colors.deepOrange,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Image.asset(
-                    'assets/images/smart_logo.png',
-                    height: 34,
-                    fit: BoxFit.contain,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              SizedBox(
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 28, 159, 177),
+                    disabledBackgroundColor: theme.brandGreen.withValues(
+                      alpha: 0.6,
+                    ),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(13),
+                    ),
                   ),
-                  const Text(
-                    ' Account',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                      letterSpacing: -0.3,
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 23,
+                          height: 23,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.2,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Login',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Icon(Icons.arrow_forward_rounded, size: 19),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 23),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Flexible(
+                    child: Text(
+                      'Belum punya akun?',
+                      style: TextStyle(color: Color(0xFF78857C), fontSize: 13),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: isLoading ? null : _openRegisterPage,
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.brandGreen,
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
+                    ),
+                    child: const Text(
+                      'Daftar',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // NAVIGASI KE REGISTER DENGAN PANAH
-            Align(
-              alignment: Alignment.centerLeft,
-              child: InkWell(
-                onTap: _openRegisterPage,
-                borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.arrow_back_rounded,
-                        size: 14,
-                        color: Color(0xFF1657D9),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'Register Page',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1657D9),
-                        ),
-                      ),
-                    ],
+              const SizedBox(height: 24),
+              const Center(
+                child: Text(
+                  'STUDENT MART • BELANJA JADI PRAKTIS',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF9AA69F),
+                    fontSize: 9,
+                    letterSpacing: 1.1,
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-
-            // FIELD EMAIL
-            _inputField(
-              label: 'Email',
-              hint: 'nama@example.com',
-              controller: emailController,
-              isPassword: false,
-              keyboardType: TextInputType.emailAddress,
-              action: TextInputAction.next,
-              autofillHints: const [
-                AutofillHints.username,
-                AutofillHints.email,
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // FIELD PASSWORD
-            _inputField(
-              label: 'Password',
-              hint: PasswordHintRandomAwoawkaoakw.generate(),
-              controller: passwordController,
-              isPassword: true,
-              action: TextInputAction.done,
-              autofillHints: const [AutofillHints.password],
-              onSubmitted: _login,
-            ),
-            const SizedBox(height: 24),
-
-            // TOMBOL LOGIN BERGRADASI BIRU PERSIS MOCKUP
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1657D9),
-                  disabledBackgroundColor: const Color(0xFF1657D9).withValues(alpha: 0.6),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Login Account',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // LINK REGISTER DI BAWAH TOMBOL
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Flexible(
-                  child: Text(
-                    'Belum punya akun?',
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 12.5,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: isLoading ? null : _openRegisterPage,
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF1657D9),
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text(
-                    'Daftar Sekarang',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -469,7 +537,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF5071FE),
+      backgroundColor: theme.pageBackground,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -478,38 +546,22 @@ class _LoginPageState extends State<LoginPage> {
             if (desktop) {
               return Row(
                 children: [
-                  // SISI KIRI: ARTWORK RESMI HIESKENO & ZAKIAK (SMKN 4 JEMBER)
-                  Expanded(
-                    flex: 11,
-                    child: Container(
-                      color: const Color(0xFF1556CE),
-                      child: Image.asset(
-                        'assets/images/brand_left_panel.png',
-                        fit: BoxFit.cover,
-                        alignment: Alignment.centerRight,
-                      ),
-                    ),
-                  ),
-
-                  // SISI KANAN: BACKGROUND BIRU, DOODLE IKON, DAN KARTU LOGIN
+                  Expanded(flex: 11, child: _brandPanel()),
                   Expanded(
                     flex: 10,
                     child: Container(
-                      color: const Color(0xFF5071FE),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _buildDoodles(),
-                          Center(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 24,
-                              ),
-                              child: _buildLoginCard(compact: false),
-                            ),
+                      color: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 48,
+                        vertical: 35,
+                      ),
+                      child: SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight - 70,
                           ),
-                        ],
+                          child: _loginForm(compact: false),
+                        ),
                       ),
                     ),
                   ),
@@ -517,114 +569,15 @@ class _LoginPageState extends State<LoginPage> {
               );
             }
 
-            // TAMPILAN MOBILE / HP (< 900px)
             return Container(
-              color: const Color(0xFF5071FE),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Background doodles
-                  _buildDoodles(),
-
-                  // Scrollable body agar aman di semua ukuran layar & saat keyboard terbuka
-                  SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
-                    child: Column(
-                      children: [
-                        // HERO BANNER SMKN 4 JEMBER UNTUK HP
-                        SizedBox(
-                          height: constraints.maxWidth < 400 ? 190 : 220,
-                          width: double.infinity,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.asset(
-                                'assets/images/brand_left_panel.png',
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topLeft,
-                              ),
-                              // Gradient fade lembut ke bawah agar menyatu dengan background biru
-                              Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      const Color(0xFF5071FE).withValues(alpha: 0.6),
-                                      const Color(0xFF5071FE),
-                                    ],
-                                    stops: const [0.35, 0.8, 1.0],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // KARTU LOGIN (MELAYANG DAN TUMPANG TINDIH ELEGAN KE HERO BANNER)
-                        Transform.translate(
-                          offset: const Offset(0, -22),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: constraints.maxWidth < 400 ? 16 : 22,
-                            ),
-                            child: _buildLoginCard(compact: true),
-                          ),
-                        ),
-
-                        // FOOTER COPYRIGHT & AVATAR PENGEMBANG UNTUK HP
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1.5),
-                                ),
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    'assets/images/student1.jpg',
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 7),
-                              Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1.5),
-                                ),
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    'assets/images/student2.png',
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 9),
-                              const Text(
-                                'Copyright - Hieskeno & Zakiak',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              color: Colors.white,
+              alignment: Alignment.center,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: constraints.maxWidth < 400 ? 24 : 36,
+                  vertical: 35,
+                ),
+                child: _loginForm(compact: true),
               ),
             );
           },
