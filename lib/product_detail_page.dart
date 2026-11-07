@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'product_model.dart';
@@ -173,8 +173,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.network(
-                      currentProduct.image!,
+                      ApiService.getImageUrl(currentProduct.image),
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          size: 60,
+                          color: Colors.grey,
+                        ),
+                      ),
                     ),
                   )
                 : const Center(

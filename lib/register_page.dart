@@ -558,6 +558,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         'assets/images/brand_left_panel.png',
                         fit: BoxFit.cover,
                         alignment: Alignment.centerRight,
+                        filterQuality: FilterQuality.high,
                       ),
                     ),
                   ),
@@ -613,6 +614,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 'assets/images/brand_left_panel.png',
                                 fit: BoxFit.cover,
                                 alignment: Alignment.topLeft,
+                                filterQuality: FilterQuality.high,
                               ),
                               // Gradient fade lembut ke bawah agar menyatu dengan background biru
                               Container(

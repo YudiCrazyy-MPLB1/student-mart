@@ -921,7 +921,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'PROMO STUDENT MART \u{1F389}',
+                            'PROMO STUDENT MART 🎉',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,

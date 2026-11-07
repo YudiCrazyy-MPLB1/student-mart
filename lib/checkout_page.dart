@@ -117,8 +117,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    final items = context.read<CartController>().items;
-    final total = context.read<CartController>().total;
+    final cart = context.watch<CartController>();
+    final items = cart.items;
+    final total = cart.total;
 
     return Scaffold(
       appBar: AppBar(
@@ -158,16 +159,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           padding: const EdgeInsets.only(bottom: 14),
                           child: Row(
                             children: [
-                              Container(
-                                width: 55,
-                                height: 55,
-                                decoration: BoxDecoration(
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: 55,
+                                  height: 55,
                                   color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.shopping_bag_outlined,
-                                  color: Colors.blue,
+                                  child: item.product.image != null && item.product.image!.isNotEmpty
+                                      ? Image.network(
+                                          ApiService.getImageUrl(item.product.image),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => const Icon(
+                                            Icons.shopping_bag_outlined,
+                                            color: Colors.blue,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.shopping_bag_outlined,
+                                          color: Colors.blue,
+                                        ),
                                 ),
                               ),
 

@@ -311,12 +311,12 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
               children: [
                 Text(
                   _greetingMessage,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 5),
                 Text(
                   'Pantau aktivitas Student Mart dari satu tempat.',
-                  style: TextStyle(fontSize: 13),
+                  style: const TextStyle(fontSize: 13),
                 ),
               ],
             ),
