@@ -2,6 +2,7 @@ import 'product_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'app_cached_image.dart';
 import 'cart_controller.dart';
 import 'api_service.dart';
 import 'utils.dart';
@@ -159,25 +160,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           padding: const EdgeInsets.only(bottom: 14),
                           child: Row(
                             children: [
-                              ClipRRect(
+                              AppCachedNetworkImage(
+                                imageUrl: item.product.image,
+                                width: 55,
+                                height: 55,
+                                fit: BoxFit.cover,
                                 borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  width: 55,
-                                  height: 55,
-                                  color: Colors.grey.shade100,
-                                  child: item.product.image != null && item.product.image!.isNotEmpty
-                                      ? Image.network(
-                                          ApiService.getImageUrl(item.product.image),
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => const Icon(
-                                            Icons.shopping_bag_outlined,
-                                            color: Colors.blue,
-                                          ),
-                                        )
-                                      : const Icon(
-                                          Icons.shopping_bag_outlined,
-                                          color: Colors.blue,
-                                        ),
+                                fallbackIcon: const Icon(
+                                  Icons.shopping_bag_outlined,
+                                  color: Colors.blue,
                                 ),
                               ),
 

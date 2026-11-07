@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'api_service.dart';
+import 'app_cached_image.dart';
 import 'cart_controller.dart';
 import 'checkout_page.dart';
 import 'product_provider.dart';
@@ -100,27 +100,16 @@ class _CartPageState extends State<CartPage> {
                           padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
-                              ClipRRect(
+                              AppCachedNetworkImage(
+                                imageUrl: product.image,
+                                width: 65,
+                                height: 65,
+                                fit: BoxFit.cover,
                                 borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  width: 65,
-                                  height: 65,
-                                  color: Colors.grey.shade100,
-                                  child: product.image != null && product.image!.isNotEmpty
-                                      ? Image.network(
-                                          ApiService.getImageUrl(product.image),
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => const Icon(
-                                            Icons.shopping_bag,
-                                            size: 35,
-                                            color: Colors.blue,
-                                          ),
-                                        )
-                                      : const Icon(
-                                          Icons.shopping_bag,
-                                          size: 35,
-                                          color: Colors.blue,
-                                        ),
+                                fallbackIcon: const Icon(
+                                  Icons.shopping_bag,
+                                  size: 35,
+                                  color: Colors.blue,
                                 ),
                               ),
 

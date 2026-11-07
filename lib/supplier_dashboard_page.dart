@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 
 import 'api_service.dart';
+import 'app_cached_image.dart';
 import 'tos_dialog.dart';
 import 'tos_redialog.dart';
 
@@ -541,29 +542,17 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
                         padding: const EdgeInsets.all(12.0),
                         child: Row(
                           children: [
-                            ClipRRect(
+                            AppCachedNetworkImage(
+                              imageUrl: p['image']?.toString(),
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
                               borderRadius: BorderRadius.circular(8),
-                              child: p['image'] != null
-                                  ? Image.network(
-                                      ApiService.getImageUrl(p['image']),
-                                      width: 60,
-                                      height: 60,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, error, stackTrace) => const Icon(
-                                        Icons.broken_image,
-                                        size: 60,
-                                        color: Colors.grey,
-                                      ),
-                                    )
-                                  : Container(
-                                      width: 60,
-                                      height: 60,
-                                      color: Colors.grey.shade200,
-                                      child: const Icon(
-                                        Icons.store,
-                                        color: Colors.teal,
-                                      ),
-                                    ),
+                              backgroundColor: Colors.grey.shade200,
+                              fallbackIcon: const Icon(
+                                Icons.store,
+                                color: Colors.teal,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(

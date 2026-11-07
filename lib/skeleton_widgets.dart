@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+export 'app_cached_image.dart';
+
 /// Skeleton loading yang dipakai bersama. Hanya untuk tempat yang memuat
 /// daftar / konten utama halaman; spinner kecil di tombol tetap spinner.
 ///

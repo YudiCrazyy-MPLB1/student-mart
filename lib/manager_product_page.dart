@@ -460,38 +460,23 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
                                 )
                               : product?.image != null &&
                                     product!.image!.trim().isNotEmpty
-                              ? Image.network(
-                                  ApiService.getImageUrl(product.image),
-
+                              ? AppCachedNetworkImage(
+                                  imageUrl: product.image,
                                   fit: BoxFit.cover,
-
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null) {
-                                          return child;
-                                        }
-
-                                        return const Center(
-                                          child: CircularProgressIndicator(),
-                                        );
-                                      },
-
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.image_not_supported_outlined,
-                                            size: 50,
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text('Gambar tidak dapat dimuat'),
-                                        ],
-                                      ),
-                                    );
-                                  },
+                                  errorWidget: const Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.image_not_supported_outlined,
+                                          size: 50,
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text('Gambar tidak dapat dimuat'),
+                                      ],
+                                    ),
+                                  ),
                                 )
                               : const Center(
                                   child: Column(
@@ -778,50 +763,14 @@ class _ManagerProductPageState extends State<ManagerProductPage> {
     double height = 60,
     double borderRadius = 8,
   }) {
-    final imageUrl = ApiService.getImageUrl(image);
-
-    if (imageUrl.isEmpty) {
-      return Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
-        child: const Icon(Icons.inventory_2_outlined, color: Colors.grey),
-      );
-    }
-
-    return Container(
+    return AppCachedNetworkImage(
+      imageUrl: image,
       width: width,
       height: height,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) {
-            return child;
-          }
-
-          return const Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Icon(Icons.image_not_supported_outlined, color: Colors.grey),
-          );
-        },
-      ),
+      fit: BoxFit.cover,
+      borderRadius: BorderRadius.circular(borderRadius),
+      backgroundColor: Colors.grey.shade200,
+      fallbackIcon: const Icon(Icons.inventory_2_outlined, color: Colors.grey),
     );
   }
 

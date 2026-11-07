@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'product_model.dart';
 
@@ -9,10 +11,37 @@ class CartItem {
   CartItem({required this.product, this.quantity = 1});
 
   int get subtotal => product.price * quantity;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product': product.toJson(),
+      'quantity': quantity,
+    };
+  }
+
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    return CartItem(
+      product: Product.fromJson(
+        Map<String, dynamic>.from(json['product'] as Map),
+      ),
+      quantity: json['quantity'] is int
+          ? json['quantity'] as int
+          : int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
+    );
+  }
 }
 
 class CartController extends ChangeNotifier {
+  static const String _storageKey = 'student_mart_saved_cart';
+
   final List<CartItem> _items = [];
+  bool _isLoaded = false;
+
+  CartController() {
+    _loadFromPrefs();
+  }
+
+  bool get isLoaded => _isLoaded;
 
   List<CartItem> get items => List.unmodifiable(_items);
 
@@ -48,6 +77,7 @@ class CartController extends ChangeNotifier {
     }
 
     notifyListeners();
+    _saveToPrefs();
   }
 
   void decreaseQuantity(Product product) {
@@ -64,12 +94,14 @@ class CartController extends ChangeNotifier {
     }
 
     notifyListeners();
+    _saveToPrefs();
   }
 
   void removeFromCart(Product product) {
     _items.removeWhere((item) => item.product.id == product.id);
 
     notifyListeners();
+    _saveToPrefs();
   }
 
   /// Samakan isi keranjang dengan data produk terbaru dari server (harga,
@@ -108,12 +140,63 @@ class CartController extends ChangeNotifier {
       item.product = fresh;
     }
 
-    if (notes.isNotEmpty) notifyListeners();
+    if (notes.isNotEmpty) {
+      notifyListeners();
+      _saveToPrefs();
+    }
     return notes;
   }
 
   void clearCart() {
     _items.clear();
     notifyListeners();
+    _saveToPrefs();
+  }
+
+  // ============================================================
+  // PERSISTENSI SHARED PREFERENCES
+  // ============================================================
+
+  Future<void> _loadFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rawJson = prefs.getString(_storageKey);
+      if (rawJson != null && rawJson.isNotEmpty) {
+        final decoded = jsonDecode(rawJson);
+        if (decoded is List) {
+          _items.clear();
+          for (final rawItem in decoded) {
+            try {
+              if (rawItem is Map) {
+                _items.add(
+                  CartItem.fromJson(Map<String, dynamic>.from(rawItem)),
+                );
+              }
+            } catch (e) {
+              debugPrint('Gagal deserialize item keranjang: $e');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Gagal membaca keranjang dari SharedPreferences: $e');
+    } finally {
+      _isLoaded = true;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_items.isEmpty) {
+        await prefs.remove(_storageKey);
+      } else {
+        final encodedList = _items.map((item) => item.toJson()).toList();
+        await prefs.setString(_storageKey, jsonEncode(encodedList));
+      }
+    } catch (e) {
+      debugPrint('Gagal menyimpan keranjang ke SharedPreferences: $e');
+    }
   }
 }

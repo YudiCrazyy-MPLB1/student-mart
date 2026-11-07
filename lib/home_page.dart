@@ -607,24 +607,17 @@ class _HomePageState extends State<HomePage> {
           children: [
             Expanded(
               child: Center(
-                child: product.image != null && product.image!.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          ApiService.getImageUrl(product.image),
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.shopping_bag,
-                            size: 70,
-                            color: theme.brandGreen,
-                          ),
-                        ),
-                      )
-                    : Icon(
-                        Icons.shopping_bag,
-                        size: 70,
-                        color: theme.brandGreen,
-                      ),
+                child: AppCachedNetworkImage(
+                  imageUrl: product.image,
+                  fit: BoxFit.contain,
+                  borderRadius: BorderRadius.circular(12),
+                  backgroundColor: Colors.transparent,
+                  fallbackIcon: const Icon(
+                    Icons.shopping_bag,
+                    size: 70,
+                    color: theme.brandGreen,
+                  ),
+                ),
               ),
             ),
             Text(
@@ -702,20 +695,14 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: ClipRRect(
+            child: AppCachedNetworkImage(
+              imageUrl: ad['image']?.toString(),
+              fit: BoxFit.cover,
+              width: double.infinity,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
-              child: ad['image'] != null
-                  ? Image.network(
-                      ApiService.getImageUrl(ad['image']),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) => const Center(
-                        child: Icon(Icons.campaign, size: 50, color: theme.textMuted),
-                      ),
-                    )
-                  : const Center(
-                      child: Icon(Icons.campaign, size: 50, color: theme.textMuted),
-                    ),
+              fallbackIcon: const Center(
+                child: Icon(Icons.campaign, size: 50, color: theme.textMuted),
+              ),
             ),
           ),
           Padding(
@@ -868,30 +855,18 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ],
                               ),
-                              child: ClipRRect(
+                              child: AppCachedNetworkImage(
+                                imageUrl: ad['image']?.toString(),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
                                 borderRadius: BorderRadius.circular(18),
-                                child: ad['image'] != null
-                                    ? Image.network(
-                                        ApiService.getImageUrl(ad['image']),
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                const Center(
-                                                  child: Icon(
-                                                    Icons.broken_image_outlined,
-                                                    size: 46,
-                                                    color: theme.textMuted,
-                                                  ),
-                                                ),
-                                      )
-                                    : Center(
-                                        child: Icon(
-                                          Icons.campaign_rounded,
-                                          size: 46,
-                                          color: theme.darkGreen,
-                                        ),
-                                      ),
+                                fallbackIcon: const Center(
+                                  child: Icon(
+                                    Icons.campaign_rounded,
+                                    size: 46,
+                                    color: theme.darkGreen,
+                                  ),
+                                ),
                               ),
                             );
                           },

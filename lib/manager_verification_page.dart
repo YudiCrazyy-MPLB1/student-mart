@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import 'product_provider.dart';
 import 'package:flutter/material.dart';

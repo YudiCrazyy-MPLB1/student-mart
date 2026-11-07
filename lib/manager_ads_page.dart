@@ -1,7 +1,8 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'app_cached_image.dart';
 import 'utils.dart';
 
 class ManagerAdsPage extends StatefulWidget {
@@ -227,23 +228,15 @@ class _ManagerAdsPageState extends State<ManagerAdsPage> {
 
                         // BANNER IKLAN
                         if (ad['image'] != null)
-                          ClipRRect(
+                          AppCachedNetworkImage(
+                            imageUrl: ad['image']?.toString(),
+                            height: 120,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              ApiService.getImageUrl(ad['image']),
-                              height: 120,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, error, stackTrace) => Container(
-                                height: 120,
-                                color: Colors.grey.shade300,
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
+                            fallbackIcon: const Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
                             ),
                           ),
                         const SizedBox(height: 12),

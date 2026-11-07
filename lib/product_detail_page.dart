@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'product_model.dart';
@@ -162,35 +162,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // GAMBAR
-          Container(
+          AppCachedNetworkImage(
+            imageUrl: currentProduct.image,
             width: double.infinity,
             height: 250,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(20),
+            fit: BoxFit.cover,
+            borderRadius: BorderRadius.circular(20),
+            fallbackIcon: const Icon(
+              Icons.image_not_supported,
+              size: 60,
+              color: Colors.grey,
             ),
-            child: currentProduct.image != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.network(
-                      ApiService.getImageUrl(currentProduct.image),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: 60,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  )
-                : const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 60,
-                      color: Colors.grey,
-                    ),
-                  ),
           ),
 
           const SizedBox(height: 24),

@@ -76,4 +76,19 @@ class Product {
       isActive: parseBool(json['is_active']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'barcode': barcode,
+      'name': name,
+      'price': price,
+      'category': category,
+      'category_id': categoryId,
+      'description': description,
+      'stock': stock,
+      'image': image,
+      'is_active': isActive,
+    };
+  }
 }
