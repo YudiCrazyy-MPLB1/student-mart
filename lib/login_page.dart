@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'api_exception.dart';
 import 'auth_provider.dart';
@@ -8,11 +9,11 @@ import 'register_page.dart';
 import 'sapaan_random.dart';
 
 // ═══════════════════════════════════════════════════════════
-//  WARNA TEMA BIRU — PERSIS MOCKUP HIESKENO & ZAKIAK
+//  WARNA TEMA BIRU
 // ═══════════════════════════════════════════════════════════
-const Color _kBluePrimary = Color(0xFF5071FE); // biru utama
-const Color _kBlueDark = Color(0xFF1556CE);    // biru gelap (kiri panel desktop)
-const Color _kBlueMid = Color(0xFF2060E8);     // tombol login
+const Color _kBluePrimary = Color(0xFF5071FE); 
+const Color _kBlueDark = Color(0xFF1556CE);    
+const Color _kBlueMid = Color(0xFF2060E8);     
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -69,7 +70,10 @@ class _LoginPageState extends State<LoginPage> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text('Selamat datang, $userName!'),
+            content: Text(
+              'Selamat datang, $userName!',
+              style: GoogleFonts.plusJakartaSans(),
+            ),
             behavior: SnackBarBehavior.floating,
             backgroundColor: _kBlueDark,
           ),
@@ -91,7 +95,10 @@ class _LoginPageState extends State<LoginPage> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: Text(
+            message,
+            style: GoogleFonts.plusJakartaSans(),
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: isError ? Colors.red.shade700 : _kBlueDark,
         ),
@@ -104,13 +111,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ══════════════════════════════════════════════════════════
-  //  BUBBLE / CIRCLE DECORATIONS  — floating white circles
+  //  BUBBLE / CIRCLE DECORATIONS
   // ══════════════════════════════════════════════════════════
   Widget _bubbles() {
     return IgnorePointer(
       child: Stack(
         children: [
-          // Large faint circles
           _circle(size: 160, left: -55,  top: -55,  opacity: 0.12),
           _circle(size: 110, left: 60,   top: -20,  opacity: 0.10),
           _circle(size: 80,  left: -30,  top: 200,  opacity: 0.08),
@@ -153,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ══════════════════════════════════════════════════════════
-  //  INPUT FIELD — persis gaya mockup (tanpa prefix icon)
+  //  INPUT FIELD
   // ══════════════════════════════════════════════════════════
   Widget _inputField({
     required String label,
@@ -170,10 +176,10 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF475569),
+            color: const Color(0xFF475569),
           ),
         ),
         const SizedBox(height: 7),
@@ -185,10 +191,18 @@ class _LoginPageState extends State<LoginPage> {
           textInputAction: action,
           autofillHints: autofillHints,
           onSubmitted: (_) => onSubmitted?.call(),
-          style: const TextStyle(fontSize: 13.5, color: Color(0xFF1E293B)),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13.5, 
+            color: const Color(0xFF1E293B),
+            fontWeight: FontWeight.w500,
+          ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+            hintStyle: GoogleFonts.plusJakartaSans(
+              color: const Color(0xFF94A3B8), 
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+            ),
             suffixIcon: isPassword
                 ? IconButton(
                     tooltip: obscurePassword
@@ -211,8 +225,8 @@ class _LoginPageState extends State<LoginPage> {
             filled: true,
             fillColor: const Color(0xFFF1F5F9),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
+              horizontal: 16,
+              vertical: 16,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -237,21 +251,21 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ══════════════════════════════════════════════════════════
-  //  LOGIN CARD — white card floating on blue background
+  //  LOGIN CARD
   // ══════════════════════════════════════════════════════════
   Widget _loginCard({required bool compact}) {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 400),
+      constraints: const BoxConstraints(maxWidth: 420),
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 22 : 32,
-        vertical:   compact ? 26 : 36,
+        horizontal: compact ? 24 : 36,
+        vertical:   compact ? 28 : 40,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.14),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 32,
             offset: const Offset(0, 12),
           ),
@@ -262,22 +276,18 @@ class _LoginPageState extends State<LoginPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-
-            // ── HEADER: "Login to Your SMart Account" ──
-            // smart_logo.png is 500x500 but content is only at Y=[164,316], X=[71,417]
-            // We crop to show just the logo text at the right visual size
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Login to Your ',
-                    style: TextStyle(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 19,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
+                      color: const Color(0xFF1E293B),
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -285,24 +295,32 @@ class _LoginPageState extends State<LoginPage> {
                     height: 34,
                     child: ClipRect(
                       child: Align(
-                        // Content center is at ~Y=240 → normalized: (240/500)*2-1 = -0.04
                         alignment: const Alignment(0, -0.04),
-                        // Content height is ~152px out of 500 → ratio = 0.304
                         heightFactor: 0.32,
                         child: Image.asset(
                           'assets/images/smart_logo.png',
                           height: 150,
                           fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Text(
+                              'SMART',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: _kBluePrimary,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     ' Account',
-                    style: TextStyle(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 19,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
+                      color: const Color(0xFF1E293B),
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -311,23 +329,22 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 10),
 
-            // ── REGISTER LINK (← Register Page) ──
             Align(
               alignment: Alignment.centerLeft,
               child: InkWell(
                 onTap: isLoading ? null : _openRegisterPage,
                 borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 3, horizontal: 2),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.arrow_back_rounded, size: 13, color: _kBluePrimary),
-                      SizedBox(width: 4),
+                      const Icon(Icons.arrow_back_rounded, size: 14, color: _kBluePrimary),
+                      const SizedBox(width: 6),
                       Text(
                         'Register Page',
-                        style: TextStyle(
-                          fontSize: 11.5,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: _kBluePrimary,
                         ),
@@ -337,9 +354,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // ── EMAIL ──
             _inputField(
               label: 'Email',
               hint: 'nama@example.com',
@@ -351,7 +367,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 16),
 
-            // ── PASSWORD ──
             _inputField(
               label: 'Password',
               hint: PasswordHintRandomAwoawkaoakw.generate(),
@@ -361,11 +376,10 @@ class _LoginPageState extends State<LoginPage> {
               autofillHints: const [AutofillHints.password],
               onSubmitted: _login,
             ),
-            const SizedBox(height: 26),
+            const SizedBox(height: 28),
 
-            // ── TOMBOL LOGIN ──
             SizedBox(
-              height: 48,
+              height: 50,
               child: ElevatedButton(
                 onPressed: isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
@@ -379,16 +393,16 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 child: isLoading
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 22,
+                        height: 22,
                         child: CircularProgressIndicator(
                           color: Colors.white,
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Login',
-                        style: TextStyle(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.3,
@@ -396,18 +410,18 @@ class _LoginPageState extends State<LoginPage> {
                       ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
 
-            // ── DAFTAR LINK ──
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Flexible(
+                Flexible(
                   child: Text(
                     'Belum punya akun?',
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFF64748B),
                       fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -419,9 +433,12 @@ class _LoginPageState extends State<LoginPage> {
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text(
+                  child: Text(
                     'Daftar Sekarang',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700, 
+                      fontSize: 12.5,
+                    ),
                   ),
                 ),
               ],
@@ -433,7 +450,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ══════════════════════════════════════════════════════════
-  //  COPYRIGHT FOOTER — developer avatars + text
+  //  COPYRIGHT FOOTER — developer avatars + text (Stacked)
   // ══════════════════════════════════════════════════════════
   Widget _copyrightRow({bool alignRight = false}) {
     return Row(
@@ -441,15 +458,29 @@ class _LoginPageState extends State<LoginPage> {
           alignRight ? MainAxisAlignment.end : MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _avatar('assets/images/student1.jpg'),
-        const SizedBox(width: 6),
-        _avatar('assets/images/student2.png'),
-        const SizedBox(width: 10),
-        const Text(
+        // Tumpukan Avatar
+        SizedBox(
+          width: 56, // Lebar yang cukup untuk dua avatar yang bertumpuk
+          height: 32,
+          child: Stack(
+            children: [
+              Positioned(
+                left: 0,
+                child: _avatar('assets/images/student1.jpg'),
+              ),
+              Positioned(
+                left: 24, // Efek menumpuk pada avatar kedua
+                child: _avatar('assets/images/student2.png'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
           'Copyright - Hieskeno & Zakiak',
-          style: TextStyle(
+          style: GoogleFonts.plusJakartaSans(
             color: Colors.white,
-            fontSize: 11.5,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -460,21 +491,28 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _avatar(String assetPath) {
     return Container(
-      width: 30,
-      height: 30,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: ClipOval(
-        child: Image.asset(assetPath, fit: BoxFit.cover),
+        child: Image.asset(
+          assetPath, 
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: Colors.grey.shade300,
+            child: const Icon(Icons.person, size: 20, color: Colors.white),
+          ),
+        ),
       ),
     );
   }
@@ -495,7 +533,6 @@ class _LoginPageState extends State<LoginPage> {
             if (isDesktop) {
               return Row(
                 children: [
-                  // ── LEFT: blue bg + bubbles + login card ──
                   Expanded(
                     flex: 48,
                     child: Container(
@@ -517,25 +554,21 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-
-                  // ── RIGHT: brand artwork panel ──
                   Expanded(
                     flex: 52,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Dark blue base fills any overflow
                         Container(color: _kBlueDark),
-                        // Artwork image covers the full right panel
                         Image.asset(
                           'assets/images/brand_left_panel.png',
                           fit: BoxFit.cover,
                           alignment: Alignment.center,
+                          errorBuilder: (context, error, stackTrace) => const SizedBox(),
                         ),
-                        // Copyright badge — bottom right
                         Positioned(
-                          bottom: 20,
-                          right: 24,
+                          bottom: 24,
+                          right: 32,
                           child: _copyrightRow(alignRight: true),
                         ),
                       ],
@@ -549,18 +582,19 @@ class _LoginPageState extends State<LoginPage> {
             return Stack(
               fit: StackFit.expand,
               children: [
-                // Blue background with bubbles
+                // Latar Belakang Biru dengan Gelembung
                 Container(color: _kBluePrimary),
                 _bubbles(),
 
-                // Scrollable content column
+                // ScrollView 
                 SingleChildScrollView(
                   physics: const ClampingScrollPhysics(),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(
                     children: [
-                      // ── HERO BANNER (school image on top) ──
+                      // ── HERO BANNER (Gambar Atas) ──
                       SizedBox(
-                        height: constraints.maxWidth < 400 ? 200 : 240,
+                        height: constraints.maxWidth < 400 ? 220 : 260,
                         width: double.infinity,
                         child: Stack(
                           fit: StackFit.expand,
@@ -569,8 +603,8 @@ class _LoginPageState extends State<LoginPage> {
                               'assets/images/brand_left_panel.png',
                               fit: BoxFit.cover,
                               alignment: Alignment.topCenter,
+                              errorBuilder: (context, error, stackTrace) => const SizedBox(),
                             ),
-                            // Gradient fade to blue at the bottom
                             Container(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
@@ -589,23 +623,23 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      // ── FLOATING LOGIN CARD ──
+                      // ── KARTU LOGIN PUTIH (Tengah) ──
                       Transform.translate(
-                        offset: const Offset(0, -28),
+                        offset: const Offset(0, -40), 
                         child: Padding(
                           padding: EdgeInsets.symmetric(
-                            horizontal: constraints.maxWidth < 400 ? 18 : 24,
+                            horizontal: constraints.maxWidth < 400 ? 20 : 28,
                           ),
                           child: Center(child: _loginCard(compact: true)),
                         ),
                       ),
 
-                      // ── COPYRIGHT FOOTER ──
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-                        child: Transform.translate(
-                          offset: const Offset(0, -20),
-                          child: _copyrightRow(),
+                      // ── FOTO & COPYRIGHT OWNER (Langsung di bawah kotak putih) ──
+                      Transform.translate(
+                        offset: const Offset(0, -16), // Memberi sedikit jarak tepat di bawah form login
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 40),
+                          child: _copyrightRow(alignRight: false), 
                         ),
                       ),
                     ],
