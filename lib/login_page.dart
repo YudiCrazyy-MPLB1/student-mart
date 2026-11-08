@@ -1,13 +1,18 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:provider/provider.dart';
 
 import 'api_exception.dart';
 import 'auth_provider.dart';
 import 'register_page.dart';
 import 'sapaan_random.dart';
-import 'theme.dart' as theme;
+
+// ═══════════════════════════════════════════════════════════
+//  WARNA TEMA BIRU — PERSIS MOCKUP HIESKENO & ZAKIAK
+// ═══════════════════════════════════════════════════════════
+const Color _kBluePrimary = Color(0xFF5071FE); // biru utama
+const Color _kBlueDark = Color(0xFF1556CE);    // biru gelap (kiri panel desktop)
+const Color _kBlueMid = Color(0xFF2060E8);     // tombol login
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,12 +22,11 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController = TextEditingController();
-
+  final TextEditingController emailController    = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   bool obscurePassword = true;
-  bool isLoading = false;
+  bool isLoading       = false;
 
   @override
   void dispose() {
@@ -31,35 +35,30 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // LOGIN - tetap menggunakan backend Laravel
+  // ─────────────── LOGIN LOGIC ───────────────
   Future<void> _login() async {
     if (isLoading) return;
 
-    final email = emailController.text.trim();
+    final email    = emailController.text.trim();
     final password = passwordController.text;
 
     if (email.isEmpty) {
       _showMessage('Email wajib diisi.', isError: true);
       return;
     }
-
     if (password.isEmpty) {
       _showMessage('Password wajib diisi.', isError: true);
       return;
     }
 
     FocusScope.of(context).unfocus();
-
     setState(() => isLoading = true);
 
-    // Ambil messenger sebelum await: begitu login sukses, RoleCheckPage
-    // mengganti halaman ini sehingga `context` miliknya tidak berlaku lagi.
     final messenger = ScaffoldMessenger.of(context);
-    final auth = context.read<AuthProvider>();
+    final auth      = context.read<AuthProvider>();
 
     try {
       final data = await auth.login(email: email, password: password);
-
       TextInput.finishAutofillContext(shouldSave: true);
 
       final dynamic userData = data['user'];
@@ -72,205 +71,94 @@ class _LoginPageState extends State<LoginPage> {
           SnackBar(
             content: Text('Selamat datang, $userName!'),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: theme.brandGreen,
+            backgroundColor: _kBlueDark,
           ),
         );
-      // Tidak ada Navigator di sini: AuthProvider sudah berubah, dan
-      // RoleCheckPage memilih HomePage / ManagerDashboardPage.
     } catch (e) {
       if (!mounted) return;
-
       _showMessage(
         e is ApiException ? e.message : 'Terjadi kesalahan. Coba lagi.',
         isError: true,
       );
     } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
   void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(message),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: isError ? Colors.red.shade700 : theme.brandGreen,
+          backgroundColor: isError ? Colors.red.shade700 : _kBlueDark,
         ),
       );
   }
 
   void _openRegisterPage() {
     if (isLoading) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RegisterPage()),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage()));
   }
 
-  // LOGO STUDENT MART
-  Widget _brandLogo({bool large = false}) {
-    final double iconSize = large ? 54 : 36;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: iconSize,
-          height: iconSize,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(large ? 16 : 11),
-          ),
-          child: Icon(
-            Icons.shopping_bag_rounded,
-            size: iconSize * 0.58,
-            color: theme.brandGreen,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Student Mart',
-              style: TextStyle(
-                fontSize: large ? 25 : 21,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.8,
-                color: large ? Colors.white : theme.darkGreen,
-              ),
-            ),
-            if (large)
-              const Text(
-                'Digital School Marketplace',
-                style: TextStyle(
-                  fontSize: 10,
-                  letterSpacing: 1.5,
-                  color: Colors.white70,
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // PANEL BRANDING UNTUK DESKTOP
-  Widget _brandPanel() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 42),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [theme.brandGreen, theme.darkGreen],
-        ),
-      ),
+  // ══════════════════════════════════════════════════════════
+  //  BUBBLE / CIRCLE DECORATIONS  — floating white circles
+  // ══════════════════════════════════════════════════════════
+  Widget _bubbles() {
+    return IgnorePointer(
       child: Stack(
         children: [
-          Positioned(top: -50, right: -80, child: _decorationCircle(260)),
-          Positioned(bottom: -100, left: -90, child: _decorationCircle(300)),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _brandLogo(large: true),
-              const Spacer(),
-              Container(
-                width: 76,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFD166),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(height: 28),
-              const Text(
-                'Belanja mudah,\nsekolah lebih nyaman.',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 42,
-                  height: 1.2,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1.2,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Pesan kebutuhanmu dengan praktis '
-                'melalui Student Mart.',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                  height: 1.7,
-                ),
-              ),
-              const SizedBox(height: 34),
-              _featureRow(
-                Icons.shopping_basket_outlined,
-                'Kebutuhan sekolah dalam satu tempat',
-              ),
-              const SizedBox(height: 17),
-              _featureRow(Icons.schedule_rounded, 'Pemesanan lebih praktis'),
-              const SizedBox(height: 17),
-              _featureRow(Icons.verified_user_outlined, 'Akses akun yang aman'),
-              const Spacer(),
-              const Text(
-                'STUDENT MART • SMK NEGERI 4 JEMBER',
-                style: TextStyle(
-                  color: Colors.white60,
-                  fontSize: 10,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
+          // Large faint circles
+          _circle(size: 160, left: -55,  top: -55,  opacity: 0.12),
+          _circle(size: 110, left: 60,   top: -20,  opacity: 0.10),
+          _circle(size: 80,  left: -30,  top: 200,  opacity: 0.08),
+          _circle(size: 200, right: -80, bottom: -80, opacity: 0.10),
+          _circle(size: 60,  right: 10,  top: 60,   opacity: 0.14),
+          _circle(size: 50,  right: 90,  top: 10,   opacity: 0.12),
+          _circle(size: 70,  left: 20,   bottom: 80, opacity: 0.10),
+          _circle(size: 40,  left: 110,  top: 80,   opacity: 0.14),
+          _circle(size: 55,  right: 60,  bottom: 40, opacity: 0.10),
+          _circle(size: 35,  left: 200,  bottom: 10, opacity: 0.12),
+          _circle(size: 25,  right: 30,  bottom: 150, opacity: 0.14),
+          _circle(size: 20,  left: 30,   top: 300,  opacity: 0.10),
         ],
       ),
     );
   }
 
-  Widget _decorationCircle(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
-          width: 35,
+  Widget _circle({
+    required double size,
+    double? left,
+    double? right,
+    double? top,
+    double? bottom,
+    required double opacity,
+  }) {
+    return Positioned(
+      left: left,
+      right: right,
+      top: top,
+      bottom: bottom,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: opacity),
         ),
       ),
     );
   }
 
-  Widget _featureRow(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: const Color(0xFFFFD166), size: 23),
-        const SizedBox(width: 13),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // FIELD EMAIL DAN PASSWORD
+  // ══════════════════════════════════════════════════════════
+  //  INPUT FIELD — persis gaya mockup (tanpa prefix icon)
+  // ══════════════════════════════════════════════════════════
   Widget _inputField({
     required String label,
     required String hint,
     required TextEditingController controller,
-    required IconData icon,
     required bool isPassword,
     required TextInputAction action,
     TextInputType keyboardType = TextInputType.text,
@@ -283,12 +171,12 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF27352E),
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF475569),
           ),
         ),
-        const SizedBox(height: 9),
+        const SizedBox(height: 7),
         TextField(
           controller: controller,
           enabled: !isLoading,
@@ -297,11 +185,10 @@ class _LoginPageState extends State<LoginPage> {
           textInputAction: action,
           autofillHints: autofillHints,
           onSubmitted: (_) => onSubmitted?.call(),
-          style: const TextStyle(fontSize: 14, color: Color(0xFF26352D)),
+          style: const TextStyle(fontSize: 13.5, color: Color(0xFF1E293B)),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF9AA69F), fontSize: 13),
-            prefixIcon: Icon(icon, size: 20, color: const Color(0xFF829188)),
+            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
             suffixIcon: isPassword
                 ? IconButton(
                     tooltip: obscurePassword
@@ -310,40 +197,38 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: isLoading
                         ? null
                         : () {
-                            setState(() {
-                              obscurePassword = !obscurePassword;
-                            });
+                            setState(() => obscurePassword = !obscurePassword);
                           },
                     icon: Icon(
                       obscurePassword
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      size: 20,
-                      color: const Color(0xFF829188),
+                      size: 19,
+                      color: const Color(0xFF94A3B8),
                     ),
                   )
                 : null,
             filled: true,
-            fillColor: const Color(0xFFFAFCFA),
+            fillColor: const Color(0xFFF1F5F9),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 17,
+              horizontal: 14,
+              vertical: 14,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: theme.brandGreen, width: 1.5),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: _kBluePrimary, width: 1.6),
             ),
             disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: Color(0xFFE1E8E2)),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
           ),
         ),
@@ -351,213 +236,372 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // FORM LOGIN
-  Widget _loginForm({required bool compact}) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: AutofillGroup(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (compact) ...[
-                Center(child: _brandLogo()),
-                const SizedBox(height: 42),
-              ],
-              const Text(
-                'Selamat Datang di\nStudent Mart',
-                style: TextStyle(
-                  fontSize: 31,
-                  height: 1.25,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.9,
-                  color: Color(0xFF1E3026),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Masuk untuk melanjutkan belanja '
-                'kebutuhan sekolahmu.',
-                style: TextStyle(
-                  color: Color(0xFF78857C),
-                  fontSize: 14,
-                  height: 1.7,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              _inputField(
-                label: 'Email',
-                hint: 'emailanda@example.com',
-                controller: emailController,
-                icon: Icons.email_outlined,
-                isPassword: false,
-                keyboardType: TextInputType.emailAddress,
-                action: TextInputAction.next,
-                autofillHints: const [
-                  AutofillHints.username,
-                  AutofillHints.email,
-                ],
-              ),
-              const SizedBox(height: 22),
-
-              _inputField(
-                label: 'Password',
-                hint: PasswordHintRandomAwoawkaoakw.generate(),
-                controller: passwordController,
-                icon: Icons.lock_outline_rounded,
-                isPassword: true,
-                action: TextInputAction.done,
-                autofillHints: const [AutofillHints.password],
-                onSubmitted: _login,
-              ),
-              const Center(
-                child: Text(
-                  'STUDENT MART • BELANJA JADI PRAKTIS',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF9AA69F),
-                    fontSize: 9,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ),
-
-
-              const SizedBox(height: 28),
-
-              SizedBox(
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 28, 159, 177),
-                    disabledBackgroundColor: theme.brandGreen.withValues(
-                      alpha: 0.6,
-                    ),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 23,
-                          height: 23,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.2,
-                          ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Login',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(width: 10),
-                            Icon(Icons.arrow_forward_rounded, size: 19),
-                          ],
-                        ),
-                ),
-              ),
-              const SizedBox(height: 23),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Flexible(
-                    child: Text(
-                      'Belum punya akun?',
-                      style: TextStyle(color: Color(0xFF78857C), fontSize: 13),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: isLoading ? null : _openRegisterPage,
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.brandGreen,
-                      padding: const EdgeInsets.symmetric(horizontal: 7),
-                    ),
-                    child: const Text(
-                      'Daftar',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Center(
-                child: Text(
-                  'STUDENT MART • BELANJA JADI PRAKTIS',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF9AA69F),
-                    fontSize: 9,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ),
-            ],
+  // ══════════════════════════════════════════════════════════
+  //  LOGIN CARD — white card floating on blue background
+  // ══════════════════════════════════════════════════════════
+  Widget _loginCard({required bool compact}) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 400),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 22 : 32,
+        vertical:   compact ? 26 : 36,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 32,
+            offset: const Offset(0, 12),
           ),
+        ],
+      ),
+      child: AutofillGroup(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            // ── HEADER: "Login to Your SMart Account" ──
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Login to Your ',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  Image.asset(
+                    'assets/images/smart_logo.png',
+                    height: 34,
+                    fit: BoxFit.contain,
+                  ),
+                  const Text(
+                    ' Account',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // ── REGISTER LINK (← Register Page) ──
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                onTap: isLoading ? null : _openRegisterPage,
+                borderRadius: BorderRadius.circular(6),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 3, horizontal: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_back_rounded, size: 13, color: _kBluePrimary),
+                      SizedBox(width: 4),
+                      Text(
+                        'Register Page',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: _kBluePrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── EMAIL ──
+            _inputField(
+              label: 'Email',
+              hint: 'nama@example.com',
+              controller: emailController,
+              isPassword: false,
+              keyboardType: TextInputType.emailAddress,
+              action: TextInputAction.next,
+              autofillHints: const [AutofillHints.username, AutofillHints.email],
+            ),
+            const SizedBox(height: 16),
+
+            // ── PASSWORD ──
+            _inputField(
+              label: 'Password',
+              hint: PasswordHintRandomAwoawkaoakw.generate(),
+              controller: passwordController,
+              isPassword: true,
+              action: TextInputAction.done,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: _login,
+            ),
+            const SizedBox(height: 26),
+
+            // ── TOMBOL LOGIN ──
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kBlueMid,
+                  disabledBackgroundColor: _kBlueMid.withValues(alpha: 0.55),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // ── DAFTAR LINK ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Flexible(
+                  child: Text(
+                    'Belum punya akun?',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: isLoading ? null : _openRegisterPage,
+                  style: TextButton.styleFrom(
+                    foregroundColor: _kBluePrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Daftar Sekarang',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
+  // ══════════════════════════════════════════════════════════
+  //  COPYRIGHT FOOTER — developer avatars + text
+  // ══════════════════════════════════════════════════════════
+  Widget _copyrightRow({bool alignRight = false}) {
+    return Row(
+      mainAxisAlignment:
+          alignRight ? MainAxisAlignment.end : MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _avatar('assets/images/student1.jpg'),
+        const SizedBox(width: 6),
+        _avatar('assets/images/student2.png'),
+        const SizedBox(width: 10),
+        const Text(
+          'Copyright - Hieskeno & Zakiak',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _avatar(String assetPath) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Image.asset(assetPath, fit: BoxFit.cover),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  BUILD
+  // ══════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: theme.pageBackground,
+      backgroundColor: _kBluePrimary,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final bool desktop = constraints.maxWidth >= 900;
+            final bool isDesktop = constraints.maxWidth >= 900;
 
-            if (desktop) {
-              return Row(
+            // ─────────────── DESKTOP ───────────────
+            if (isDesktop) {
+              return Stack(
+                fit: StackFit.expand,
                 children: [
-                  Expanded(flex: 11, child: _brandPanel()),
-                  Expanded(
-                    flex: 10,
-                    child: Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 48,
-                        vertical: 35,
-                      ),
+                  // Full blue background
+                  Container(color: _kBlueDark),
+
+                  // Right-side artwork fills the right half
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: constraints.maxWidth * 0.52,
+                    child: Image.asset(
+                      'assets/images/brand_left_panel.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.centerRight,
+                    ),
+                  ),
+
+                  // Floating circles on left side
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: constraints.maxWidth * 0.52,
+                    child: _bubbles(),
+                  ),
+
+                  // Left side: login card centered
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: constraints.maxWidth * 0.48,
+                    child: Center(
                       child: SingleChildScrollView(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: constraints.maxHeight - 70,
-                          ),
-                          child: _loginForm(compact: false),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 36,
+                          vertical: 28,
                         ),
+                        child: _loginCard(compact: false),
                       ),
                     ),
+                  ),
+
+                  // Copyright footer — bottom right
+                  Positioned(
+                    bottom: 20,
+                    right: 24,
+                    child: _copyrightRow(alignRight: true),
                   ),
                 ],
               );
             }
 
-            return Container(
-              color: Colors.white,
-              alignment: Alignment.center,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: constraints.maxWidth < 400 ? 24 : 36,
-                  vertical: 35,
+            // ─────────────── MOBILE / TABLET ───────────────
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                // Blue background with bubbles
+                Container(color: _kBluePrimary),
+                _bubbles(),
+
+                // Scrollable content column
+                SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      // ── HERO BANNER (school image on top) ──
+                      SizedBox(
+                        height: constraints.maxWidth < 400 ? 200 : 240,
+                        width: double.infinity,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.asset(
+                              'assets/images/brand_left_panel.png',
+                              fit: BoxFit.cover,
+                              alignment: Alignment.topCenter,
+                            ),
+                            // Gradient fade to blue at the bottom
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    _kBluePrimary.withValues(alpha: 0.55),
+                                    _kBluePrimary,
+                                  ],
+                                  stops: const [0.4, 0.78, 1.0],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // ── FLOATING LOGIN CARD ──
+                      Transform.translate(
+                        offset: const Offset(0, -28),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: constraints.maxWidth < 400 ? 18 : 24,
+                          ),
+                          child: Center(child: _loginCard(compact: true)),
+                        ),
+                      ),
+
+                      // ── COPYRIGHT FOOTER ──
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                        child: Transform.translate(
+                          offset: const Offset(0, -20),
+                          child: _copyrightRow(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: _loginForm(compact: true),
-              ),
+              ],
             );
           },
         ),
