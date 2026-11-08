@@ -264,6 +264,8 @@ class _LoginPageState extends State<LoginPage> {
           children: [
 
             // ── HEADER: "Login to Your SMart Account" ──
+            // smart_logo.png is 500x500 but content is only at Y=[164,316], X=[71,417]
+            // We crop to show just the logo text at the right visual size
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
@@ -279,10 +281,21 @@ class _LoginPageState extends State<LoginPage> {
                       letterSpacing: -0.3,
                     ),
                   ),
-                  Image.asset(
-                    'assets/images/smart_logo.png',
+                  SizedBox(
                     height: 34,
-                    fit: BoxFit.contain,
+                    child: ClipRect(
+                      child: Align(
+                        // Content center is at ~Y=240 → normalized: (240/500)*2-1 = -0.04
+                        alignment: const Alignment(0, -0.04),
+                        // Content height is ~152px out of 500 → ratio = 0.304
+                        heightFactor: 0.32,
+                        child: Image.asset(
+                          'assets/images/smart_logo.png',
+                          height: 150,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
                   ),
                   const Text(
                     ' Account',
@@ -480,56 +493,53 @@ class _LoginPageState extends State<LoginPage> {
 
             // ─────────────── DESKTOP ───────────────
             if (isDesktop) {
-              return Stack(
-                fit: StackFit.expand,
+              return Row(
                 children: [
-                  // Full blue background
-                  Container(color: _kBlueDark),
-
-                  // Right-side artwork fills the right half
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: constraints.maxWidth * 0.52,
-                    child: Image.asset(
-                      'assets/images/brand_left_panel.png',
-                      fit: BoxFit.cover,
-                      alignment: Alignment.centerRight,
-                    ),
-                  ),
-
-                  // Floating circles on left side
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: constraints.maxWidth * 0.52,
-                    child: _bubbles(),
-                  ),
-
-                  // Left side: login card centered
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: constraints.maxWidth * 0.48,
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 36,
-                          vertical: 28,
-                        ),
-                        child: _loginCard(compact: false),
+                  // ── LEFT: blue bg + bubbles + login card ──
+                  Expanded(
+                    flex: 48,
+                    child: Container(
+                      color: _kBluePrimary,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _bubbles(),
+                          Center(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 40,
+                                vertical: 32,
+                              ),
+                              child: _loginCard(compact: false),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
 
-                  // Copyright footer — bottom right
-                  Positioned(
-                    bottom: 20,
-                    right: 24,
-                    child: _copyrightRow(alignRight: true),
+                  // ── RIGHT: brand artwork panel ──
+                  Expanded(
+                    flex: 52,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Dark blue base fills any overflow
+                        Container(color: _kBlueDark),
+                        // Artwork image covers the full right panel
+                        Image.asset(
+                          'assets/images/brand_left_panel.png',
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center,
+                        ),
+                        // Copyright badge — bottom right
+                        Positioned(
+                          bottom: 20,
+                          right: 24,
+                          child: _copyrightRow(alignRight: true),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               );
