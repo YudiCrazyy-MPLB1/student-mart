@@ -32,6 +32,7 @@ class ManagerApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/manager/products',
+      requireAuth: true,
       fallback: 'Gagal mengambil produk manager.',
     );
 
@@ -127,6 +128,7 @@ class ManagerApi {
     final json = await ApiClient.jsonRequest(
       'DELETE',
       '/manager/products/$productId',
+      requireAuth: true,
       fallback: 'Gagal menonaktifkan produk.',
     );
 
@@ -139,6 +141,7 @@ class ManagerApi {
     final json = await ApiClient.jsonRequest(
       'PATCH',
       '/manager/products/$productId/activate',
+      requireAuth: true,
       fallback: 'Gagal mengaktifkan produk.',
     );
 
@@ -155,6 +158,7 @@ class ManagerApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/manager/orders',
+      requireAuth: true,
       fallback: 'Gagal mengambil pesanan.',
     );
 
@@ -170,6 +174,7 @@ class ManagerApi {
     return ApiClient.jsonRequest(
       'PATCH',
       '/manager/orders/$orderId/status',
+      requireAuth: true,
       body: {'status': status},
       fallback: 'Gagal mengubah status pesanan.',
     );

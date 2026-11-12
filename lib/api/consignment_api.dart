@@ -12,6 +12,7 @@ class ConsignmentApi {
     return ApiClient.jsonRequest(
       'POST',
       '/consignment/tos',
+      requireAuth: true,
       fallback: 'Gagal menyetujui TOS.',
     );
   }
@@ -26,6 +27,7 @@ class ConsignmentApi {
   }) {
     return ApiClient.multipartRequest(
       '/consignment/products',
+      requireAuth: true,
       fallback: 'Gagal mengunggah produk.',
       fields: {
         'name': name,
@@ -43,6 +45,7 @@ class ConsignmentApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/manager/consignment/products/pending',
+      requireAuth: true,
       fallback: 'Gagal memuat produk pending.',
     );
 
@@ -56,6 +59,7 @@ class ConsignmentApi {
     return ApiClient.jsonRequest(
       'PUT',
       '/manager/consignment/products/$productId/verify',
+      requireAuth: true,
       body: {'status': status},
       fallback: 'Gagal memverifikasi produk.',
     );
@@ -65,6 +69,7 @@ class ConsignmentApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/consignment/my-products',
+      requireAuth: true,
       fallback: 'Gagal memuat produk saya.',
     );
 

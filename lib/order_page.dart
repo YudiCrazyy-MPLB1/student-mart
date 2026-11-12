@@ -18,6 +18,7 @@ class _OrderPageState extends State<OrderPage> with WidgetsBindingObserver {
   bool isLoading = true;
   String? errorMessage;
   Timer? _autoRefreshTimer;
+  bool _isFetching = false;
 
   @override
   void initState() {
@@ -52,14 +53,19 @@ class _OrderPageState extends State<OrderPage> with WidgetsBindingObserver {
         return status == 'pending' || status == 'processing';
       });
 
-      // Jika ada pesanan aktif atau daftar masih kosong, refresh secara berkala di latar belakang
-      if (hasActiveOrders || orders.isEmpty) {
+      // Hanya polling saat ada pesanan aktif. Daftar kosong / error tidak
+      // perlu di-poll terus (refresh ulang tersedia lewat pull-to-refresh
+      // dan saat app dibuka kembali).
+      if (hasActiveOrders && !_isFetching) {
         _loadOrders(silent: true);
       }
     });
   }
 
   Future<void> _loadOrders({bool silent = false}) async {
+    if (_isFetching) return;
+    _isFetching = true;
+
     if (!silent) {
       setState(() {
         isLoading = true;
@@ -70,6 +76,7 @@ class _OrderPageState extends State<OrderPage> with WidgetsBindingObserver {
     try {
       final result = await ApiService.getOrders();
 
+      _isFetching = false;
       if (!mounted) return;
 
       setState(() {
@@ -78,6 +85,7 @@ class _OrderPageState extends State<OrderPage> with WidgetsBindingObserver {
         errorMessage = null;
       });
     } catch (e) {
+      _isFetching = false;
       if (!mounted) return;
 
       if (!silent) {
@@ -353,4 +361,4 @@ class _OrderPageState extends State<OrderPage> with WidgetsBindingObserver {
       ),
     );
   }
-}
+}

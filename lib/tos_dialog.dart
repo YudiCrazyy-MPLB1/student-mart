@@ -20,6 +20,7 @@ class _TosDialogState extends State<TosDialog> {
     // Mengecek posisi scroll secara real-time
     _scrollController.addListener(() {
       // Jika posisi scroll sudah mencapai batas maksimal bawah (dengan toleransi 10 pixel)
+      if (!_scrollController.hasClients) return;
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 10) {
         if (!_isBottomReached) {
@@ -32,6 +33,7 @@ class _TosDialogState extends State<TosDialog> {
 
     // Cek di awal: jika teks ternyata pendek dan tidak bisa di-scroll
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
       if (_scrollController.position.maxScrollExtent <= 0) {
         setState(() {
           _isBottomReached = true;

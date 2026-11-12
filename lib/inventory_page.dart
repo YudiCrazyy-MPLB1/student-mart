@@ -240,8 +240,12 @@ class _InventoryPageState extends State<InventoryPage> {
       },
     );
 
-    quantityController.dispose();
-    noteController.dispose();
+    // Jangan dispose langsung: showDialog selesai saat route di-pop, tapi
+    // animasi tutup masih berjalan dan TextField masih memakai controller.
+    Future.delayed(const Duration(milliseconds: 500), () {
+      quantityController.dispose();
+      noteController.dispose();
+    });
   }
 
   Widget _buildProductCard(Map<String, dynamic> product) {
@@ -448,4 +452,4 @@ class _InventoryPageState extends State<InventoryPage> {
       ),
     );
   }
-}
+}

@@ -14,6 +14,7 @@ class InventoryApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/manager/inventory/summary',
+      requireAuth: true,
       fallback: 'Gagal mengambil ringkasan inventaris.',
     );
 
@@ -26,6 +27,7 @@ class InventoryApi {
   ) async {
     final json = await ApiClient.multipartRequest(
       '/manager/products/import/preview',
+      requireAuth: true,
       fallback: 'Gagal membaca file Excel.',
       files: [http.MultipartFile.fromBytes('file', bytes, filename: fileName)],
     );
@@ -39,6 +41,7 @@ class InventoryApi {
     final json = await ApiClient.jsonRequest(
       'POST',
       '/manager/products/import/confirm',
+      requireAuth: true,
       body: {'rows': rows},
       fallback: 'Gagal melakukan import Excel.',
       timeout: ApiClient.uploadTimeout, // import banyak baris bisa lama
@@ -53,6 +56,7 @@ class InventoryApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/manager/inventory/products',
+      requireAuth: true,
       query: search.trim().isEmpty ? null : {'search': search.trim()},
       fallback: 'Gagal mengambil daftar inventaris.',
     );
@@ -64,6 +68,7 @@ class InventoryApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/manager/inventory/low-stock',
+      requireAuth: true,
       fallback: 'Gagal mengambil stok menipis.',
     );
 
@@ -82,6 +87,7 @@ class InventoryApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/manager/inventory-movements',
+      requireAuth: true,
       query: query,
       fallback: 'Gagal mengambil riwayat inventaris.',
     );
@@ -97,6 +103,7 @@ class InventoryApi {
     final json = await ApiClient.jsonRequest(
       'POST',
       '/manager/inventory/products/$productId/stock-in',
+      requireAuth: true,
       body: {
         'quantity': quantity,
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
@@ -116,6 +123,7 @@ class InventoryApi {
     final json = await ApiClient.jsonRequest(
       'POST',
       '/manager/inventory/products/$productId/stock-out',
+      requireAuth: true,
       body: {
         'quantity': quantity,
         'type': type,
@@ -135,6 +143,7 @@ class InventoryApi {
     final json = await ApiClient.jsonRequest(
       'POST',
       '/manager/inventory/products/$productId/adjust-stock',
+      requireAuth: true,
       body: {
         'stock': stock,
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),

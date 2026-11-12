@@ -21,6 +21,7 @@ class AdvertisementApi {
   }) async {
     await ApiClient.multipartRequest(
       '/advertisements/submit',
+      requireAuth: true,
       fallback: 'Gagal mengajukan iklan.',
       fields: {
         'title': title,
@@ -39,6 +40,7 @@ class AdvertisementApi {
     final json = await ApiClient.jsonRequest(
       'GET',
       '/manager/advertisements/pending',
+      requireAuth: true,
       fallback: 'Gagal memuat antrean iklan.',
     );
 
@@ -53,6 +55,7 @@ class AdvertisementApi {
     return ApiClient.jsonRequest(
       'PUT',
       '/manager/advertisements/$adId/verify',
+      requireAuth: true,
       body: {'action': action},
       fallback: 'Gagal memverifikasi iklan.',
     );

@@ -164,6 +164,9 @@ class CartController extends ChangeNotifier {
       if (rawJson != null && rawJson.isNotEmpty) {
         final decoded = jsonDecode(rawJson);
         if (decoded is List) {
+          // Item yang sudah ditambahkan user sebelum load selesai tidak boleh
+          // hilang: gabungkan, jangan clear().
+          final addedBeforeLoad = List<CartItem>.of(_items);
           _items.clear();
           for (final rawItem in decoded) {
             try {
@@ -174,6 +177,17 @@ class CartController extends ChangeNotifier {
               }
             } catch (e) {
               debugPrint('Gagal deserialize item keranjang: $e');
+            }
+          }
+
+          for (final added in addedBeforeLoad) {
+            final existing = getItem(added.product);
+            if (existing == null) {
+              _items.add(added);
+            } else {
+              existing.quantity = (existing.quantity + added.quantity)
+                  .clamp(1, added.product.stock > 0 ? added.product.stock : 1)
+                  .toInt();
             }
           }
         }

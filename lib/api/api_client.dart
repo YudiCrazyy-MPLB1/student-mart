@@ -302,16 +302,18 @@ class ApiClient {
       return 'Server sedang bermasalah. Coba lagi nanti.';
     }
 
-    final message = json?['message'];
-    if (message is String && message.trim().isNotEmpty) {
-      return message.trim();
-    }
-
+    // Laravel 422: 'message' hanya ringkasan ("... (and 2 more errors)"),
+    // pesan spesifik ada di 'errors', jadi utamakan itu.
     final errors = json?['errors'];
     if (errors is Map && errors.isNotEmpty) {
       final first = errors.values.first;
       if (first is List && first.isNotEmpty) return first.first.toString();
       if (first is String && first.isNotEmpty) return first;
+    }
+
+    final message = json?['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message.trim();
     }
 
     if (status == 429) return 'Terlalu banyak percobaan. Coba lagi nanti.';
