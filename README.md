@@ -18,5 +18,9 @@ Platform ini berfokus pada fitur manajemen konsinyasi dan monetisasi iklan nativ
 ## Developer
 
 **Achmad Rezky Putra Yudi**
-XI MPLB 1, SMK Negeri 4 Jember
-GitHub: [YudiCrazyy-MPLB1](https://github.com/YudiCrazyy-MPLB1)
+XI MPLB 1, SMK NEGERI 4 JEMBER
+Head Developer
+
+**Ibra Masyayik Suyudi**
+XI DKV 1, SMK NEGERI 4 JEMBER
+UI Designer
