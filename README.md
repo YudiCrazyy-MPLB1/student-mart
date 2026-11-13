@@ -1,17 +1,22 @@
-# student_mart
+<div align="center">
+  <img src="StudentMartLogo1.png" alt="Logo Student Mart" width="250" />[cite: 1]
+</div>
 
-A new Flutter project.
+# Student Mart
 
-## Getting Started
+Student Mart adalah platform web marketplace digital yang dibangun khusus untuk SMK Negeri 4 Jember. 
 
-This project is a starting point for a Flutter application.
+Platform ini berfokus pada fitur manajemen konsinyasi dan monetisasi iklan native. Antarmuka web dirancang dengan gaya clean, menggunakan warna-warna soft, tata letak Swiss grid, serta estetika Neo-Brutalist yang kalem, tanpa elemen neon atau gradasi pasaran.
 
-A few resources to get you started if this is your first Flutter project:
+## Tech Stack
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+* Backend: Laravel REST API (PHP) dan MySQL
+* Frontend: Flutter (Dart)
+* Infrastruktur: Cloudflare DNS/CDN untuk optimasi cache dan web hosting InfinityFree
+* Lingkungan Pengembangan: VS Code, Git, dan Laragon
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Developer
+
+**Achmad Rezky Putra Yudi**
+XI MPLB 1, SMK Negeri 4 Jember
+GitHub: [YudiCrazyy-MPLB1](https://github.com/YudiCrazyy-MPLB1)
