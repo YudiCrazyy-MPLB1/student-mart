@@ -17,10 +17,16 @@ Platform ini berfokus pada fitur manajemen konsinyasi dan monetisasi iklan nativ
 
 ## Developer
 
+<div align="center">
+  <img src="assets\images\student1.jpg">
+</div>
+
 **Achmad Rezky Putra Yudi**
-XI MPLB 1, SMK NEGERI 4 JEMBER
 Head Developer
 
+<div align="center">
+  <img src="assets\images\student2.jpg">
+</div>
+
 **Ibra Masyayik Suyudi**
-XI DKV 1, SMK NEGERI 4 JEMBER
 UI Designer
