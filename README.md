@@ -17,16 +17,8 @@ Platform ini berfokus pada fitur manajemen konsinyasi dan monetisasi iklan nativ
 
 ## Developer
 
-<div align="center">
-  <img src="assets\images\student1.jpg">
-</div>
-
 **Achmad Rezky Putra Yudi**
 Head Developer
-
-<div align="center">
-  <img src="assets\images\student2.jpg">
-</div>
 
 **Ibra Masyayik Suyudi**
 UI Designer
