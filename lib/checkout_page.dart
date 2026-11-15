@@ -1,4 +1,4 @@
-import 'product_provider.dart';
+﻿import 'product_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,6 +8,7 @@ import 'api_service.dart';
 import 'utils.dart';
 import 'api_exception.dart';
 import 'auth_provider.dart';
+import 'order_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -83,7 +84,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (!mounted) return;
       setState(() => isProcessing = false);
 
-      if (e.statusCode == 401) {
+      if (e.statusCode == 408 || e.statusCode == 503) {
+        // Timeout / koneksi putus: pesanan MUNGKIN sudah tercatat di server.
+        // Jangan biarkan siswa langsung mengulang (risiko pesanan ganda).
+        _showUncertainOrderDialog();
+      } else if (e.statusCode == 401) {
         // Reset sesi + pindah ke login (tidak berjalan dua kali kalau
         // callback ApiService sudah menanganinya).
         context.read<AuthProvider>().expireSession();
@@ -113,6 +118,46 @@ class _CheckoutPageState extends State<CheckoutPage> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  /// Dipanggil saat koneksi terputus / timeout ketika membuat pesanan.
+  /// Server bisa saja sudah memproses pesanan, jadi siswa diminta mengecek
+  /// daftar pesanan dulu sebelum mengulang checkout.
+  Future<void> _showUncertainOrderDialog() async {
+    final goToOrders = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Koneksi bermasalah'),
+        content: const Text(
+          'Kami belum bisa memastikan apakah pesanan kamu sudah tercatat. '
+          'Cek dulu di "Pesanan Saya" sebelum mencoba lagi, supaya pesanan '
+          'tidak terbuat dua kali.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Tutup'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Cek Pesanan'),
+          ),
+        ],
+      ),
+    );
+
+    if (goToOrders == true && mounted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const OrderPage()),
+      );
+      // Sinkronkan stok/harga di katalog setelah kembali dari daftar pesanan.
+      if (mounted) {
+        try {
+          context.read<ProductProvider>().fetchProducts(forceRefresh: true);
+        } catch (_) {}
+      }
     }
   }
 

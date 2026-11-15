@@ -1,12 +1,13 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
-import 'dart:typed_data';
-
+import 'package:provider/provider.dart';
 import 'api_service.dart';
 import 'app_cached_image.dart';
+import 'auth_provider.dart';
 import 'tos_dialog.dart';
 import 'tos_redialog.dart';
+import 'utils.dart';
 
 class SupplierDashboardPage extends StatefulWidget {
   const SupplierDashboardPage({super.key});
@@ -17,26 +18,23 @@ class SupplierDashboardPage extends StatefulWidget {
 
 class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     with SingleTickerProviderStateMixin {
-  /// setState yang aman dipanggil setelah `await` (halaman bisa sudah ditutup).
   void _safeSetState(VoidCallback fn) {
     if (mounted) setState(fn);
   }
+
   bool _isSupplier = false;
   bool _isLoading = true;
+  int _balance = 0;
 
-  // Tab Controller untuk beralih antara Form Upload & Status Barang
   late TabController _tabController;
 
-  // Controller Form Upload
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
-
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
 
-  // Daftar produk konsinyasi milik supplier
   List<dynamic> _myProducts = [];
   bool _isLoadingProducts = false;
 
@@ -44,6 +42,11 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    final cachedUser = context.read<AuthProvider>().user;
+    if (cachedUser != null) {
+      _balance = cachedUser.balance;
+      _isSupplier = cachedUser.isSupplier;
+    }
     _loadUserData();
   }
 
@@ -57,22 +60,22 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     super.dispose();
   }
 
-  // --- AMBIL DATA USER TERBARU DARI API ---
   Future<void> _loadUserData() async {
     _safeSetState(() => _isLoading = true);
     try {
       final user = await ApiService.getMe();
+      if (mounted) {
+        context.read<AuthProvider>().syncFromApi(userData: user);
+      }
       final supplierStatus = user['is_supplier'];
-
       _safeSetState(() {
-        _isSupplier =
-            (supplierStatus == 1 ||
+        _isSupplier = (supplierStatus == 1 ||
             supplierStatus == true ||
             supplierStatus == '1');
+        _balance = AppUtils.toInt(user['balance']);
       });
-
       if (_isSupplier) {
-        _fetchMyConsignmentProducts();
+        await _fetchMyConsignmentProducts();
       }
     } catch (e) {
       _showMessage('Gagal memuat status akun: $e', isError: true);
@@ -81,13 +84,10 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     }
   }
 
-  // --- AMBIL DAFTAR PRODUK KONSINYASI SAYA ---
   Future<void> _fetchMyConsignmentProducts() async {
     _safeSetState(() => _isLoadingProducts = true);
     try {
-      // Pastikan method getMyConsignmentProducts tersedia di ApiService Anda,
-      // atau gunakan endpoint yang sesuai untuk mengambil produk milik supplier yang sedang login.
-      final products = await ApiService.getMyConsignmentProducts(); // Sesuaikan jika ada endpoint khusus produk saya
+      final products = await ApiService.getMyConsignmentProducts();
       _safeSetState(() {
         _myProducts = products;
       });
@@ -98,8 +98,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     }
   }
 
-  // --- FUNGSI MUNCULKAN TOS (UNTUK PENDAFTARAN) ---
-  void _tampilkanTOS() async {
+  Future<void> _tampilkanTOS() async {
     final bool? setuju = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -107,39 +106,36 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
         return const TosDialog();
       },
     );
-
-    if (setuju == true) {
-      if (!_isSupplier) {
-        _safeSetState(() => _isLoading = true);
-        try {
-          await ApiService.agreeTos();
-          await _loadUserData();
-          _showMessage('Berhasil! Anda sekarang adalah pemasok Student Mart.');
-        } catch (e) {
-          _showMessage(e.toString(), isError: true);
-        } finally {
-          _safeSetState(() => _isLoading = false);
-        }
+    if (setuju == true && !_isSupplier) {
+      _safeSetState(() => _isLoading = true);
+      try {
+        await ApiService.agreeTos();
+        await _loadUserData();
+        _showMessage('Berhasil! Anda sekarang adalah pemasok Student Mart.');
+      } catch (e) {
+        _showMessage(e.toString(), isError: true);
+      } finally {
+        _safeSetState(() => _isLoading = false);
       }
     }
   }
 
-  // --- FUNGSI BACA ULANG TOS (READ-ONLY) ---
   void _tampilkanTOreRead() {
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return const TosReadDialog(); // Menggunakan tos_redialog.dart
+        return const TosReadDialog();
       },
     );
   }
 
-  // --- FUNGSI PILIH GAMBAR (Khusus Web) ---
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
     if (image != null) {
       final bytes = await image.readAsBytes();
       _safeSetState(() {
@@ -149,11 +145,10 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     }
   }
 
-  // --- FUNGSI UPLOAD PRODUK ---
   Future<void> _submitProduct() async {
-    if (_nameController.text.isEmpty ||
-        _priceController.text.isEmpty ||
-        _stockController.text.isEmpty ||
+    if (_nameController.text.trim().isEmpty ||
+        _priceController.text.trim().isEmpty ||
+        _stockController.text.trim().isEmpty ||
         _selectedImageBytes == null) {
       _showMessage(
         'Harap lengkapi semua form dan pilih gambar!',
@@ -163,19 +158,16 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     }
 
     _safeSetState(() => _isLoading = true);
-
     try {
       await ApiService.submitConsignmentProduct(
-        name: _nameController.text,
-        description: _descController.text,
-        price: _priceController.text,
-        stock: _stockController.text,
+        name: _nameController.text.trim(),
+        description: _descController.text.trim(),
+        price: _priceController.text.trim(),
+        stock: _stockController.text.trim(),
         imageBytes: _selectedImageBytes!,
         imageName: _selectedImageName ?? 'produk_konsinyasi.png',
       );
-
       _showMessage('Produk berhasil diajukan! Menunggu verifikasi Admin.');
-
       _nameController.clear();
       _descController.clear();
       _priceController.clear();
@@ -184,10 +176,8 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
         _selectedImageBytes = null;
         _selectedImageName = null;
       });
-
-      // Refresh daftar produk & pindah ke tab status
       if (!mounted) return;
-      _fetchMyConsignmentProducts();
+      await _fetchMyConsignmentProducts();
       _tabController.animateTo(1);
     } catch (e) {
       _showMessage(e.toString(), isError: true);
@@ -202,6 +192,154 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
       SnackBar(
         content: Text(msg),
         backgroundColor: isError ? Colors.red : Colors.teal,
+      ),
+    );
+  }
+
+  Widget _buildBalanceCard() {
+    final approvedCount =
+        _myProducts.where((p) => p['status'] == 'approved').length;
+    final pendingCount =
+        _myProducts.where((p) => p['status'] == 'pending').length;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF10505B), Color(0xFF1BB1A4)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10505B).withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Saldo Pendapatan Konsinyasi',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Dompet Pemasok Siswa',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Perbarui Saldo',
+                onPressed: _isLoading ? null : _loadUserData,
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            AppUtils.formatRupiah(_balance),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.white70, size: 15),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Otomatis bertambah 98% dari harga jual (potongan 2% fee platform) saat pesanan selesai.',
+                    style: TextStyle(color: Colors.white, fontSize: 11.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _miniStatPill('Produk Tayang', '$approvedCount'),
+              const SizedBox(width: 8),
+              _miniStatPill('Menunggu Kurasi', '$pendingCount'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniStatPill(String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -248,7 +386,13 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color.fromARGB(255, 27, 177, 164),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Refresh Data',
+            onPressed: _loadUserData,
+          ),
           IconButton(
             icon: const Icon(Icons.rule, color: Colors.white),
             tooltip: 'Syarat & Ketentuan Konsinyasi',
@@ -266,14 +410,20 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildUploadForm(), _buildStatusTab()],
+      body: Column(
+        children: [
+          _buildBalanceCard(),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [_buildUploadForm(), _buildStatusTab()],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // UI JIKA BELUM SETUJU TOS
   Widget _buildTosPrompt() {
     return Center(
       child: Padding(
@@ -314,10 +464,9 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     );
   }
 
-  // TAB 1: FORM UPLOAD PRODUK
   Widget _buildUploadForm() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(20.0),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
@@ -326,15 +475,14 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
             children: [
               const Text(
                 'Upload Barang Titipan Baru',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               const Text(
-                'Barang yang diunggah akan masuk antrean untuk ditinjau oleh Admin sebelum tampil di toko.',
+                'Barang yang diunggah akan ditinjau oleh Admin sebelum tampil di toko.',
                 style: TextStyle(color: Colors.grey),
               ),
-              const SizedBox(height: 24),
-
+              const SizedBox(height: 20),
               TextField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -342,7 +490,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               TextField(
                 controller: _descController,
                 maxLines: 3,
@@ -351,7 +499,7 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Row(
                 children: [
                   Expanded(
@@ -359,63 +507,84 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
                       controller: _priceController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Harga Jual (Rp)',
+                        labelText: 'Harga Jual',
+                        prefixText: 'Rp ',
                         border: OutlineInputBorder(),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _stockController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Stok Awal',
+                        labelText: 'Stok Titipan',
                         border: OutlineInputBorder(),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
+              const SizedBox(height: 16),
+              const Text(
+                'Foto Produk:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              if (_selectedImageBytes != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      _selectedImageBytes!,
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
               Row(
                 children: [
-                  ElevatedButton.icon(
+                  OutlinedButton.icon(
                     onPressed: _pickImage,
-                    icon: const Icon(Icons.image),
-                    label: const Text('Pilih Foto Barang'),
+                    icon: const Icon(Icons.image_outlined),
+                    label: Text(
+                      _selectedImageBytes == null
+                          ? 'Pilih Gambar'
+                          : 'Ganti Gambar',
+                    ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      _selectedImageName ?? 'Belum ada gambar terpilih',
+                      _selectedImageName ?? 'Belum ada gambar dipilih',
                       style: TextStyle(
                         color: _selectedImageName == null
-                            ? Colors.red
-                            : Colors.green,
-                        fontWeight: FontWeight.bold,
+                            ? Colors.grey
+                            : Colors.teal.shade700,
+                        fontWeight: FontWeight.w600,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 32),
-
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
+                height: 48,
+                child: ElevatedButton.icon(
                   onPressed: _submitProduct,
+                  icon: const Icon(Icons.cloud_upload_outlined),
+                  label: const Text(
+                    'Ajukan Produk Konsinyasi',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 27, 177, 164),
                     foregroundColor: Colors.white,
-                  ),
-                  child: const Text(
-                    'Ajukan Barang',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -426,223 +595,128 @@ class _SupplierDashboardPageState extends State<SupplierDashboardPage>
     );
   }
 
-  // TAB 2: STATISTIK & STATUS PRODUK SAYA
   Widget _buildStatusTab() {
-    int approvedCount = _myProducts
-        .where((p) => p['status'] == 'approved')
-        .length;
-    int pendingCount = _myProducts
-        .where((p) => p['status'] == 'pending' || p['status'] == null)
-        .length;
-    int totalItems = _myProducts.length;
+    if (_isLoadingProducts) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_myProducts.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _loadUserData,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(height: 80),
+            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 12),
+            Center(
+              child: Text(
+                'Belum ada produk konsinyasi yang diajukan.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return RefreshIndicator(
-      onRefresh: _fetchMyConsignmentProducts,
-      child: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          // KARTU STATISTIK / RINGKASAN
-          const Text(
-            'Ringkasan Aktivitas',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Disetujui',
-                  '$approvedCount',
-                  Colors.green,
-                  Icons.check_circle,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Pending',
-                  '$pendingCount',
-                  Colors.orange,
-                  Icons.hourglass_top,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Total Produk',
-                  '$totalItems',
-                  Colors.teal,
-                  Icons.inventory,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
+      onRefresh: _loadUserData,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _myProducts.length,
+        itemBuilder: (context, index) {
+          final item = _myProducts[index];
+          final status = (item['status'] ?? 'pending').toString().toLowerCase();
+          final price = AppUtils.toInt(item['price']);
+          final stock = AppUtils.toInt(item['stock']);
+          final estNet = (price * 0.98).round();
 
-          // DAFTAR PRODUK SAYA
-          const Text(
-            'Daftar Status Barang Titipan',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
+          Color badgeColor;
+          String badgeLabel;
+          switch (status) {
+            case 'approved':
+              badgeColor = Colors.green;
+              badgeLabel = 'Disetujui & Tayang';
+              break;
+            case 'rejected':
+              badgeColor = Colors.red;
+              badgeLabel = 'Ditolak';
+              break;
+            default:
+              badgeColor = Colors.orange;
+              badgeLabel = 'Menunggu Verifikasi';
+          }
 
-          _isLoadingProducts
-              ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(30),
-                    child: CircularProgressIndicator(),
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  AppCachedNetworkImage(
+                    imageUrl: item['image']?.toString(),
+                    width: 68,
+                    height: 68,
+                    fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                )
-              : _myProducts.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40.0),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.inbox, size: 60, color: Colors.grey),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Belum ada barang titipan yang diajukan.',
-                          style: TextStyle(color: Colors.grey),
+                        Text(
+                          item['name']?.toString() ?? 'Produk',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () => _tabController.animateTo(0),
-                          child: const Text('Upload Sekarang'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Harga: ${AppUtils.formatRupiah(price)} • Sisa Stok: $stock',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Bersih/item (98%): ${AppUtils.formatRupiah(estNet)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.teal.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: badgeColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badgeLabel,
+                            style: TextStyle(
+                              color: badgeColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11.5,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _myProducts.length,
-                  itemBuilder: (context, index) {
-                    final p = _myProducts[index];
-                    final status = p['status'] ?? 'pending';
-
-                    Color badgeColor = Colors.orange;
-                    String badgeText = 'Menunggu Review';
-                    if (status == 'approved') {
-                      badgeColor = Colors.green;
-                      badgeText = 'Disetujui (Aktif)';
-                    } else if (status == 'rejected') {
-                      badgeColor = Colors.red;
-                      badgeText = 'Ditolak';
-                    }
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            AppCachedNetworkImage(
-                              imageUrl: p['image']?.toString(),
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.cover,
-                              borderRadius: BorderRadius.circular(8),
-                              backgroundColor: Colors.grey.shade200,
-                              fallbackIcon: const Icon(
-                                Icons.store,
-                                color: Colors.teal,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    p['name'] ?? 'Tanpa Nama',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Harga: Rp${p['price']} | Stok: ${p['stock']}',
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: badgeColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: badgeColor),
-                                    ),
-                                    child: Text(
-                                      badgeText,
-                                      style: TextStyle(
-                                        color: badgeColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    Color color,
-    IconData icon,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade100,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 26),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          );
+        },
       ),
     );
   }

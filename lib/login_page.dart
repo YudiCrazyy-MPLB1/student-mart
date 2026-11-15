@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'api_exception.dart';
+import 'api_service.dart';
 import 'auth_provider.dart';
 import 'register_page.dart';
 import 'sapaan_random.dart';
@@ -80,13 +81,153 @@ class _LoginPageState extends State<LoginPage> {
         );
     } catch (e) {
       if (!mounted) return;
-      _showMessage(
-        e is ApiException ? e.message : 'Terjadi kesalahan. Coba lagi.',
-        isError: true,
-      );
+      final msg = e is ApiException ? e.message : 'Terjadi kesalahan. Coba lagi.';
+      final isUnverified = msg.toLowerCase().contains('verifikasi');
+
+      if (isUnverified) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                msg,
+                style: GoogleFonts.plusJakartaSans(),
+              ),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.amber.shade900,
+              duration: const Duration(seconds: 8),
+              action: SnackBarAction(
+                label: 'KIRIM ULANG',
+                textColor: Colors.white,
+                onPressed: () => _showResendVerificationDialog(email),
+              ),
+            ),
+          );
+        _showResendVerificationDialog(email);
+      } else {
+        _showMessage(msg, isError: true);
+      }
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  Future<void> _showResendVerificationDialog([String? initialEmail]) async {
+    final emailText = (initialEmail ?? emailController.text).trim();
+    final resendEmailController = TextEditingController(text: emailText);
+    bool isResending = false;
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  const Icon(Icons.mark_email_unread_outlined, color: _kBluePrimary, size: 24),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Kirim Ulang Verifikasi',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Masukkan email akun kamu. Kami akan mengirimkan tautan verifikasi baru ke inbox email kamu.',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      color: const Color(0xFF475569),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: resendEmailController,
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !isResending,
+                    decoration: InputDecoration(
+                      labelText: 'Alamat Email',
+                      hintText: 'nama@example.com',
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isResending ? null : () => Navigator.pop(dialogCtx),
+                  child: Text(
+                    'Batal',
+                    style: GoogleFonts.plusJakartaSans(color: Colors.grey.shade600),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isResending
+                      ? null
+                      : () async {
+                          final targetEmail = resendEmailController.text.trim();
+                          if (targetEmail.isEmpty) {
+                            _showMessage('Email wajib diisi.', isError: true);
+                            return;
+                          }
+                          setDialogState(() => isResending = true);
+                          try {
+                            final resultMsg = await ApiService.resendVerificationEmail(
+                              email: targetEmail,
+                            );
+                            if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                            _showMessage(resultMsg, isError: false);
+                          } catch (err) {
+                            setDialogState(() => isResending = false);
+                            final errText = err is ApiException
+                                ? err.message
+                                : 'Gagal mengirim ulang email verifikasi.';
+                            _showMessage(errText, isError: true);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _kBlueMid,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: isResending
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Kirim Link',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showMessage(String message, {bool isError = false}) {
@@ -410,7 +551,28 @@ class _LoginPageState extends State<LoginPage> {
                       ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+
+            Center(
+              child: TextButton.icon(
+                onPressed: isLoading ? null : () => _showResendVerificationDialog(),
+                icon: const Icon(Icons.mark_email_unread_outlined, size: 16),
+                label: Text(
+                  'Belum verifikasi email? Kirim ulang',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: _kBluePrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

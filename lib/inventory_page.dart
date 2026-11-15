@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'api_exception.dart';
 import 'api_service.dart';
 import 'utils.dart';
+import 'utils/file_downloader.dart';
 import 'skeleton_widgets.dart';
 
 class InventoryPage extends StatefulWidget {
@@ -15,6 +17,7 @@ class _InventoryPageState extends State<InventoryPage> {
   List<dynamic> products = [];
   bool isLoading = true;
   String search = '';
+  bool _isExporting = false;
 
   @override
   void initState() {
@@ -369,12 +372,47 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
+  Future<void> _exportProductsExcel() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Mempersiapkan ekspor produk Excel...')),
+    );
+    try {
+      final file = await ApiService.exportProducts();
+      final path = await saveExcelFile(
+        bytes: file.bytes,
+        fileName: file.fileName,
+      );
+      if (!mounted) return;
+      if (path != null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Laporan produk berhasil disimpan: $path')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : 'Gagal ekspor produk: $e';
+      messenger.showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inventaris'),
         actions: [
+          IconButton(
+            tooltip: 'Export Produk Excel (.xlsx)',
+            onPressed: _isExporting ? null : _exportProductsExcel,
+            icon: const Icon(Icons.download_rounded),
+          ),
           IconButton(
             tooltip: 'Refresh',
             onPressed: _loadProducts,
@@ -452,4 +490,4 @@ class _InventoryPageState extends State<InventoryPage> {
       ),
     );
   }
-}
+}

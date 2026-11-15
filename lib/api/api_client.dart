@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +11,14 @@ import '../product_model.dart';
 
 /// Client HTTP dasar yang menangani koneksi, autentikasi, token,
 /// timeout, dan parsing respon Laravel.
+
+class DownloadedFile {
+  final Uint8List bytes;
+  final String fileName;
+
+  const DownloadedFile({required this.bytes, required this.fileName});
+}
+
 class ApiClient {
   static const flutterSecureStorage = FlutterSecureStorage();
   static final String baseUrl = Config.baseUrl;
@@ -192,6 +201,88 @@ class ApiClient {
       timeout: uploadTimeout,
       timeoutMessage: timeoutMessage ?? 'Upload terlalu lama. Coba lagi.',
     );
+  }
+
+  static Future<DownloadedFile> downloadFile(
+    String path, {
+    required String defaultFileName,
+    required String fallback,
+    Map<String, String>? query,
+    Duration? timeout,
+  }) async {
+    final token = resolveToken(
+      isPublic: false,
+      requireAuth: true,
+      notLoggedInMessage:
+          'Kamu harus login sebagai manager untuk mengunduh file ini.',
+    );
+
+    final request = http.Request('GET', uri(path, query))
+      ..headers.addAll({
+        'Accept':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream, application/json',
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      });
+
+    try {
+      final response = await request
+          .send()
+          .then(http.Response.fromStream)
+          .timeout(timeout ?? uploadTimeout);
+
+      final status = response.statusCode;
+      var isSessionExpiry = false;
+      if (status == 401 && token != null) {
+        isSessionExpiry = true;
+        await expireSession(token);
+      }
+
+      if (status < 200 || status >= 300) {
+        final json = tryDecode(response.body);
+        throw ApiException(
+          status,
+          errorMessage(
+            status,
+            json,
+            fallback,
+            sessionExpiry: isSessionExpiry,
+          ),
+        );
+      }
+
+      String resolvedName = defaultFileName;
+      final disposition = response.headers['content-disposition'] ??
+          response.headers['Content-Disposition'];
+      if (disposition != null && disposition.contains('filename=')) {
+        final match = RegExp(r'''filename[^;=\n]*=((['"]).*?\2|[^;\n]*)''')
+            .firstMatch(disposition);
+        if (match != null) {
+          var matched = match.group(1)?.trim() ?? '';
+          if ((matched.startsWith('"') && matched.endsWith('"')) ||
+              (matched.startsWith("'") && matched.endsWith("'"))) {
+            matched = matched.substring(1, matched.length - 1);
+          }
+          if (matched.isNotEmpty) resolvedName = matched;
+        }
+      }
+
+      return DownloadedFile(
+        bytes: response.bodyBytes,
+        fileName: resolvedName,
+      );
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(
+          408, 'Server terlalu lama memproses unduhan. Coba lagi.');
+    } on http.ClientException {
+      throw ApiException(503, 'Tidak dapat terhubung ke server.');
+    } catch (e) {
+      if (e.toString().contains('SocketException')) {
+        throw ApiException(503, 'Tidak dapat terhubung ke server.');
+      }
+      throw ApiException(500, fallback);
+    }
   }
 
   static Future<Map<String, dynamic>> send(

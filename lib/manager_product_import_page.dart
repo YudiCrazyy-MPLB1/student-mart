@@ -3,7 +3,9 @@ import 'dart:typed_data';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
+import 'api_exception.dart';
 import 'api_service.dart';
+import 'utils/file_downloader.dart';
 
 class ManagerProductImportPage extends StatefulWidget {
   const ManagerProductImportPage({super.key});
@@ -173,10 +175,44 @@ class _ManagerProductImportPageState extends State<ManagerProductImportPage> {
     }
   }
 
+  Future<void> _downloadTemplate() async {
+    setState(() => isLoading = true);
+    try {
+      final file = await ApiService.downloadProductImportTemplate();
+      final path = await saveExcelFile(
+        bytes: file.bytes,
+        fileName: file.fileName,
+      );
+      if (!mounted) return;
+      if (path != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Template berhasil diunduh: $path')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : 'Gagal unduh template: $e';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Import Produk Excel')),
+      appBar: AppBar(
+        title: const Text('Import Produk Excel'),
+        actions: [
+          IconButton(
+            tooltip: 'Unduh Template Excel',
+            icon: const Icon(Icons.download_rounded),
+            onPressed: isLoading ? null : _downloadTemplate,
+          ),
+        ],
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -184,7 +220,17 @@ class _ManagerProductImportPageState extends State<ManagerProductImportPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildFileButton(),
+                  Row(
+                    children: [
+                      Expanded(child: _buildFileButton()),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: isLoading ? null : _downloadTemplate,
+                        icon: const Icon(Icons.download_rounded),
+                        label: const Text('Template'),
+                      ),
+                    ],
+                  ),
 
                   const SizedBox(height: 20),
 

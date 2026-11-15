@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'api_exception.dart';
 import 'api_service.dart';
 import 'utils.dart';
+import 'utils/file_downloader.dart';
 import 'skeleton_widgets.dart';
 
 class InventoryMovementPage extends StatefulWidget {
@@ -18,6 +20,7 @@ class _InventoryMovementPageState extends State<InventoryMovementPage> {
   List<dynamic> _movements = [];
 
   String? _selectedType;
+  bool _isExporting = false;
 
   final List<Map<String, String?>> _filters = [
     {'label': 'Semua', 'value': null},
@@ -404,12 +407,104 @@ class _InventoryMovementPageState extends State<InventoryMovementPage> {
     );
   }
 
+  /// Batas baris yang dikirim endpoint daftar riwayat (lihat
+  /// InventoryController::index). Export Excel tidak dibatasi.
+  static const int _listLimit = 200;
+
+  String _fmtDate(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  /// Tanya user: export semua data atau rentang tanggal tertentu.
+  /// Mengembalikan null jika dibatalkan; ({start, end}) null/null = semua.
+  Future<({String? start, String? end})?> _askExportRange() async {
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Export Mutasi Excel'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, 'all'),
+            child: const Text('Semua data'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, 'range'),
+            child: const Text('Pilih rentang tanggal...'),
+          ),
+        ],
+      ),
+    );
+
+    if (choice == null || !mounted) return null;
+    if (choice == 'all') return (start: null, end: null);
+
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 5),
+      lastDate: now,
+      initialDateRange: DateTimeRange(
+        start: now.subtract(const Duration(days: 30)),
+        end: now,
+      ),
+      helpText: 'Pilih rentang tanggal',
+      saveText: 'Export',
+    );
+
+    if (picked == null) return null;
+    return (start: _fmtDate(picked.start), end: _fmtDate(picked.end));
+  }
+
+  Future<void> _exportMovementsExcel() async {
+    if (_isExporting) return;
+
+    final range = await _askExportRange();
+    if (range == null || !mounted) return;
+
+    setState(() => _isExporting = true);
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Mempersiapkan ekspor mutasi inventaris...')),
+    );
+    try {
+      final file = await ApiService.exportInventoryMovements(
+        type: _selectedType,
+        startDate: range.start,
+        endDate: range.end,
+      );
+      final path = await saveExcelFile(
+        bytes: file.bytes,
+        fileName: file.fileName,
+      );
+      if (!mounted) return;
+      if (path != null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Laporan mutasi berhasil disimpan: $path')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : 'Gagal ekspor mutasi: $e';
+      messenger.showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Inventaris'),
         actions: [
+          IconButton(
+            tooltip: 'Export Mutasi Excel (.xlsx)',
+            onPressed: _isExporting ? null : _exportMovementsExcel,
+            icon: const Icon(Icons.download_rounded),
+          ),
           IconButton(
             tooltip: 'Refresh',
             onPressed: _isLoading ? null : _loadMovements,
@@ -423,6 +518,32 @@ class _InventoryMovementPageState extends State<InventoryMovementPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: _buildFilter(),
           ),
+
+          if (!_isLoading && _movements.length >= _listLimit)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      size: 18, color: Colors.amber.shade800),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Menampilkan $_listLimit mutasi terbaru. Gunakan Export '
+                      'Excel untuk melihat data lengkap.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           Expanded(child: _buildBody()),
         ],

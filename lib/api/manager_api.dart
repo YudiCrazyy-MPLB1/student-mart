@@ -179,5 +179,85 @@ class ManagerApi {
       fallback: 'Gagal mengubah status pesanan.',
     );
   }
+
+  // ============================================================
+  // EXPORT & TEMPLATE (EXCEL)
+  // ============================================================
+
+  static Future<DownloadedFile> exportOrders({
+    String? startDate,
+    String? endDate,
+    String? status,
+    String? paymentMethod,
+    String? pickupMethod,
+  }) async {
+    final query = <String, String>{
+      if (startDate != null && startDate.isNotEmpty) 'start_date': startDate,
+      if (endDate != null && endDate.isNotEmpty) 'end_date': endDate,
+      if (status != null && status.isNotEmpty) 'status': status,
+      if (paymentMethod != null && paymentMethod.isNotEmpty)
+        'payment_method': paymentMethod,
+      if (pickupMethod != null && pickupMethod.isNotEmpty)
+        'pickup_method': pickupMethod,
+    };
+
+    return ApiClient.downloadFile(
+      '/manager/orders/export',
+      query: query.isEmpty ? null : query,
+      defaultFileName: 'laporan-pesanan.xlsx',
+      fallback: 'Gagal mengekspor laporan pesanan.',
+    );
+  }
+
+  static Future<DownloadedFile> exportProducts({
+    int? categoryId,
+    String? status,
+    String? stockFilter,
+    bool? isActive,
+  }) async {
+    final query = <String, String>{
+      if (categoryId != null) 'category_id': categoryId.toString(),
+      if (status != null && status.isNotEmpty) 'status': status,
+      if (stockFilter != null && stockFilter.isNotEmpty)
+        'stock_filter': stockFilter,
+      if (isActive != null) 'is_active': isActive ? '1' : '0',
+    };
+
+    return ApiClient.downloadFile(
+      '/manager/products/export',
+      query: query.isEmpty ? null : query,
+      defaultFileName: 'laporan-produk.xlsx',
+      fallback: 'Gagal mengekspor data produk.',
+    );
+  }
+
+  static Future<DownloadedFile> exportInventoryMovements({
+    String? startDate,
+    String? endDate,
+    int? productId,
+    String? type,
+  }) async {
+    final query = <String, String>{
+      if (startDate != null && startDate.isNotEmpty) 'start_date': startDate,
+      if (endDate != null && endDate.isNotEmpty) 'end_date': endDate,
+      if (productId != null) 'product_id': productId.toString(),
+      if (type != null && type.isNotEmpty) 'type': type,
+    };
+
+    return ApiClient.downloadFile(
+      '/manager/inventory-movements/export',
+      query: query.isEmpty ? null : query,
+      defaultFileName: 'laporan-mutasi-inventaris.xlsx',
+      fallback: 'Gagal mengekspor mutasi inventaris.',
+    );
+  }
+
+  static Future<DownloadedFile> downloadProductImportTemplate() async {
+    return ApiClient.downloadFile(
+      '/manager/products/import/template',
+      defaultFileName: 'template-import-produk.xlsx',
+      fallback: 'Gagal mengunduh template import produk.',
+    );
+  }
 }
 

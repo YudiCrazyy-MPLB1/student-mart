@@ -1,16 +1,16 @@
-/// Model data pengguna yang sedang login.
-///
-/// Objek ini disimpan di [AuthProvider] dan dapat diakses dari halaman mana
-/// pun lewat `context.watch<AuthProvider>().user` (atau `.read`).
+import 'utils.dart';
+
 class UserProfile {
   final int id;
   final String name;
   final String email;
   final String role;
-
-  /// Kolom opsional — mungkin tidak ada di semua endpoint.
   final String? phone;
   final String? avatar;
+  final int balance;
+  final bool isSupplier;
+  final DateTime? emailVerifiedAt;
+  final DateTime? tosAgreedAt;
 
   const UserProfile({
     required this.id,
@@ -19,27 +19,53 @@ class UserProfile {
     required this.role,
     this.phone,
     this.avatar,
+    this.balance = 0,
+    this.isSupplier = false,
+    this.emailVerifiedAt,
+    this.tosAgreedAt,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    int parseInt(dynamic v) {
-      if (v is int) return v;
-      if (v is double) return v.toInt();
-      if (v is String) return int.tryParse(v) ?? 0;
-      return 0;
-    }
+    final dynamic rawSupplier = json['is_supplier'];
+    final bool supplier = rawSupplier == true ||
+        rawSupplier == 1 ||
+        rawSupplier?.toString() == '1' ||
+        rawSupplier?.toString().toLowerCase() == 'true';
 
     return UserProfile(
-      id: parseInt(json['id']),
+      id: AppUtils.toInt(json['id']),
       name: json['name']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
-      role: json['role']?.toString().toLowerCase() ?? 'student',
+      role: json['role']?.toString() ?? 'student',
       phone: json['phone']?.toString(),
       avatar: json['avatar']?.toString(),
+      balance: AppUtils.toInt(json['balance']),
+      isSupplier: supplier,
+      emailVerifiedAt: json['email_verified_at'] != null
+          ? DateTime.tryParse(json['email_verified_at'].toString())
+          : null,
+      tosAgreedAt: json['tos_agreed_at'] != null
+          ? DateTime.tryParse(json['tos_agreed_at'].toString())
+          : null,
     );
   }
 
-  /// Buat salinan dengan field yang diganti.
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'role': role,
+      if (phone != null) 'phone': phone,
+      if (avatar != null) 'avatar': avatar,
+      'balance': balance,
+      'is_supplier': isSupplier,
+      if (emailVerifiedAt != null)
+        'email_verified_at': emailVerifiedAt!.toIso8601String(),
+      if (tosAgreedAt != null) 'tos_agreed_at': tosAgreedAt!.toIso8601String(),
+    };
+  }
+
   UserProfile copyWith({
     int? id,
     String? name,
@@ -47,6 +73,10 @@ class UserProfile {
     String? role,
     String? phone,
     String? avatar,
+    int? balance,
+    bool? isSupplier,
+    DateTime? emailVerifiedAt,
+    DateTime? tosAgreedAt,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -55,7 +85,10 @@ class UserProfile {
       role: role ?? this.role,
       phone: phone ?? this.phone,
       avatar: avatar ?? this.avatar,
+      balance: balance ?? this.balance,
+      isSupplier: isSupplier ?? this.isSupplier,
+      emailVerifiedAt: emailVerifiedAt ?? this.emailVerifiedAt,
+      tosAgreedAt: tosAgreedAt ?? this.tosAgreedAt,
     );
   }
 }
-

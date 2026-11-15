@@ -101,6 +101,9 @@ class ApiService {
         kodeUndangan: kodeUndangan,
       );
 
+  static Future<String> resendVerificationEmail({required String email}) =>
+      AuthApi.resendVerificationEmail(email: email);
+
   static Future<void> logout() => AuthApi.logout();
 
   static Future<Map<String, dynamic>> getMe() => AuthApi.getMe();
@@ -213,6 +216,50 @@ class ApiService {
     required String status,
   }) =>
       ManagerApi.updateManagerOrderStatus(orderId: orderId, status: status);
+
+  static Future<DownloadedFile> exportOrders({
+    String? startDate,
+    String? endDate,
+    String? status,
+    String? paymentMethod,
+    String? pickupMethod,
+  }) =>
+      ManagerApi.exportOrders(
+        startDate: startDate,
+        endDate: endDate,
+        status: status,
+        paymentMethod: paymentMethod,
+        pickupMethod: pickupMethod,
+      );
+
+  static Future<DownloadedFile> exportProducts({
+    int? categoryId,
+    String? status,
+    String? stockFilter,
+    bool? isActive,
+  }) =>
+      ManagerApi.exportProducts(
+        categoryId: categoryId,
+        status: status,
+        stockFilter: stockFilter,
+        isActive: isActive,
+      );
+
+  static Future<DownloadedFile> exportInventoryMovements({
+    String? startDate,
+    String? endDate,
+    int? productId,
+    String? type,
+  }) =>
+      ManagerApi.exportInventoryMovements(
+        startDate: startDate,
+        endDate: endDate,
+        productId: productId,
+        type: type,
+      );
+
+  static Future<DownloadedFile> downloadProductImportTemplate() =>
+    ManagerApi.downloadProductImportTemplate();
 
   // ============================================================
   // ACCOUNTING / INVENTORY

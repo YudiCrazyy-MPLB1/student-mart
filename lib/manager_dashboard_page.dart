@@ -1,15 +1,17 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
+import 'accounting_dashboard_page.dart';
 import 'api_service.dart';
+import 'auth_provider.dart';
+import 'manager_ads_page.dart';
 import 'manager_order_page.dart';
 import 'manager_product_page.dart';
-import 'accounting_dashboard_page.dart';
-import 'auth_provider.dart';
-import 'sapaan_random.dart';
 import 'manager_verification_page.dart';
-import 'manager_ads_page.dart';
+import 'sapaan_random.dart';
+import 'skeleton_widgets.dart';
+import 'theme.dart' as theme;
 import 'utils.dart';
 
 class ManagerDashboardPage extends StatefulWidget {
@@ -29,8 +31,15 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   int totalCategories = 0;
   int totalOrders = 0;
   int pendingOrders = 0;
+  int processingOrders = 0;
   int lowStockProducts = 0;
+  int outOfStockProducts = 0;
   int totalSales = 0;
+
+  // Indikator Harian & Payout Konsinyasi (WIB)
+  int todayOrders = 0;
+  int todaySales = 0;
+  int todayPayout = 0;
 
   List<dynamic> recentOrders = [];
 
@@ -44,11 +53,9 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   // ============================================================
   // LOAD DASHBOARD
   // ============================================================
-
   Future<void> _loadDashboard({bool refresh = false}) async {
     if (refresh) {
       if (_isRefreshing) return;
-
       setState(() {
         _isRefreshing = true;
       });
@@ -61,9 +68,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
 
     try {
       final response = await ApiService.getManagerDashboard();
-
       final data = response;
-
       final statistics = data['statistics'];
 
       if (statistics is! Map) {
@@ -73,29 +78,28 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
       final recent = data['recent_orders'];
 
       if (!mounted) return;
-
       setState(() {
         totalProducts = AppUtils.toInt(statistics['total_products']);
-
         totalCategories = AppUtils.toInt(statistics['total_categories']);
-
         totalOrders = AppUtils.toInt(statistics['total_orders']);
-
         pendingOrders = AppUtils.toInt(statistics['pending_orders']);
-
+        processingOrders = AppUtils.toInt(statistics['processing_orders']);
         lowStockProducts = AppUtils.toInt(statistics['low_stock_products']);
-
+        outOfStockProducts =
+            AppUtils.toInt(statistics['out_of_stock_products']);
         totalSales = AppUtils.toInt(statistics['total_sales']);
 
-        recentOrders = recent is List ? recent : [];
+        todayOrders = AppUtils.toInt(statistics['today_orders']);
+        todaySales = AppUtils.toInt(statistics['today_sales']);
+        todayPayout = AppUtils.toInt(statistics['today_payout']);
 
+        recentOrders = recent is List ? recent : [];
         _isLoading = false;
         _isRefreshing = false;
         _errorMessage = null;
       });
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         _isLoading = false;
         _isRefreshing = false;
@@ -106,34 +110,27 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
 
   String _cleanErrorMessage(dynamic error) {
     final message = error.toString();
-
     if (message.startsWith('Exception: ')) {
       return message.substring(11);
     }
-
     return message;
   }
 
   // ============================================================
   // FORMATTER
   // ============================================================
-
   String _formatStatus(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
         return 'Menunggu';
-
       case 'processing':
         return 'Diproses';
-
       case 'completed':
       case 'complete':
         return 'Selesai';
-
       case 'cancelled':
       case 'canceled':
         return 'Dibatalkan';
-
       default:
         return status.isEmpty ? 'Tidak diketahui' : status;
     }
@@ -142,36 +139,29 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return Colors.orange;
-
+        return const Color(0xFFD97706);
       case 'processing':
-        return Colors.blue;
-
+        return const Color(0xFF2563EB);
       case 'completed':
       case 'complete':
-        return Colors.green;
-
+        return theme.brandGreen;
       case 'cancelled':
       case 'canceled':
-        return Colors.red;
-
+        return const Color(0xFFDC2626);
       default:
-        return Colors.grey;
+        return theme.textMuted;
     }
   }
 
   // ============================================================
   // NAVIGATION
   // ============================================================
-
   Future<void> _openProducts() async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const ManagerProductPage()),
     );
-
     if (!mounted) return;
-
     await _loadDashboard(refresh: true);
   }
 
@@ -180,49 +170,76 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
       context,
       MaterialPageRoute(builder: (_) => const ManagerOrderPage()),
     );
-
     if (!mounted) return;
-
     await _loadDashboard(refresh: true);
   }
 
   // ============================================================
   // BUILD
   // ============================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: theme.pageBackground,
       appBar: AppBar(
-        title: const Text('Manager Dashboard'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: theme.darkGreen,
+        elevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'PANEL KONTROL',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.1,
+                color: theme.brandGreen,
+              ),
+            ),
+            Text(
+              'Manager Dashboard',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                color: theme.textDark,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
         actions: [
-          // LOGOUT
-          IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await context.read<AuthProvider>().logout();
-            },
-          ),
-
-          // REFRESH
           IconButton(
             tooltip: 'Refresh',
             onPressed: _isLoading || _isRefreshing
                 ? null
-                : () {
-                    _loadDashboard(refresh: true);
-                  },
+                : () => _loadDashboard(refresh: true),
             icon: _isRefreshing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.darkGreen,
+                    ),
                   )
                 : const Icon(Icons.refresh_rounded),
           ),
-
-          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Logout',
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.red.shade50,
+                foregroundColor: Colors.red.shade700,
+              ),
+              icon: const Icon(Icons.logout_rounded, size: 20),
+              onPressed: () async {
+                await context.read<AuthProvider>().logout();
+              },
+            ),
+          ),
         ],
       ),
       body: _buildBody(),
@@ -231,7 +248,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildLoadingSkeleton();
     }
 
     if (_errorMessage != null) {
@@ -239,39 +256,103 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
     }
 
     return RefreshIndicator(
+      color: theme.darkGreen,
       onRefresh: () => _loadDashboard(refresh: true),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
           _buildHeader(),
-
-          const SizedBox(height: 20),
-
-          _buildSalesCard(),
-
           const SizedBox(height: 16),
-
-          _buildStatisticsGrid(),
-
-          const SizedBox(height: 24),
-
-          _buildQuickActions(),
-
-          const SizedBox(height: 24),
-
-          _buildRecentOrders(),
-
+          _buildSalesAndTodayCard(),
           const SizedBox(height: 20),
+          _buildSectionTitle(
+            title: 'Ringkasan Operasional',
+            subtitle: 'Status katalog, pesanan, dan ketersediaan stok',
+          ),
+          const SizedBox(height: 12),
+          _buildStatisticsGrid(),
+          const SizedBox(height: 24),
+          _buildQuickActions(),
+          const SizedBox(height: 24),
+          _buildRecentOrders(),
         ],
       ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SkeletonShimmer(
+          child: SkeletonBlock(height: 104, radius: 20),
+        ),
+        const SizedBox(height: 16),
+        const SkeletonShimmer(
+          child: SkeletonBlock(height: 210, radius: 20),
+        ),
+        const SizedBox(height: 20),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.55,
+          children: List.generate(
+            4,
+            (_) => const SkeletonShimmer(
+              child: SkeletonBlock(radius: 16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle({
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: theme.textDark,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5,
+                    color: theme.textMuted,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        ?trailing,
+      ],
     );
   }
 
   // ============================================================
   // HEADER
   // ============================================================
-
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -280,43 +361,76 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.primaryContainer,
-            Theme.of(context).colorScheme.secondaryContainer,
-          ],
+          colors: [theme.darkGreen, theme.brandGreen],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.darkGreen.withValues(alpha: 0.16),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 54,
-            height: 54,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface
-                  .withValues(alpha: 0.9),
-              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+              ),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.admin_panel_settings_rounded,
-              size: 30,
-              color: Theme.of(context).colorScheme.primary,
+              size: 28,
+              color: Colors.white,
             ),
           ),
-
-          const SizedBox(width: 16),
-
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'STUDENT MART SMKN 4 JEMBER',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
                 Text(
                   _greetingMessage,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 17.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.2,
+                  ),
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 3),
                 Text(
-                  'Pantau aktivitas Student Mart dari satu tempat.',
-                  style: const TextStyle(fontSize: 13),
+                  'Pantau transaksi, stok, dan operasional toko dari satu tempat.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5,
+                    color: Colors.white.withValues(alpha: 0.88),
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
@@ -327,63 +441,185 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   }
 
   // ============================================================
-  // SALES CARD
+  // FINANCIAL & TODAY ACTIVITY SECTION (WIB)
   // ============================================================
-
-  Widget _buildSalesCard() {
-    return Card(
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary
-                    .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
+  Widget _buildSalesAndTodayCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.paleGreen, width: 1.1),
+        boxShadow: [
+          BoxShadow(
+            color: theme.darkGreen.withValues(alpha: 0.045),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Total Penjualan Semua Waktu
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.paleGreen,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.payments_rounded,
+                  color: theme.darkGreen,
+                  size: 25,
+                ),
               ),
-              child: Icon(
-                Icons.payments_rounded,
-                color: Theme.of(context).colorScheme.primary,
-                size: 28,
-              ),
-            ),
-
-            const SizedBox(width: 16),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Total Penjualan',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    AppUtils.formatRupiah(totalSales),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Penjualan (Semua Waktu)',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textMuted,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 3),
+                    Text(
+                      AppUtils.formatRupiah(totalSales),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 23,
+                        fontWeight: FontWeight.w800,
+                        color: theme.textDark,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Divider(color: theme.paleGreen, height: 1),
+          ),
+          // Header Aktivitas Hari Ini
+          Row(
+            children: [
+              Icon(
+                Icons.schedule_rounded,
+                size: 16,
+                color: theme.brandGreen,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Aktivitas Hari Ini (WIB)',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: theme.textDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTodayMetricCard(
+                  label: 'Omzet Selesai',
+                  value: AppUtils.formatRupiah(todaySales),
+                  icon: Icons.trending_up_rounded,
+                  color: theme.brandGreen,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildTodayMetricCard(
+                  label: 'Pesanan Masuk',
+                  value: '$todayOrders Pesanan',
+                  icon: Icons.shopping_bag_outlined,
+                  color: const Color(0xFF2563EB),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _buildTodayMetricCard(
+            label: 'Pencairan Dana Konsinyasi Siswa Hari Ini',
+            value: AppUtils.formatRupiah(todayPayout),
+            icon: Icons.account_balance_wallet_outlined,
+            color: const Color(0xFFD97706),
+            fullWidth: true,
+          ),
+        ],
+      ),
+    );
+  }
 
-            const Icon(Icons.trending_up_rounded, size: 28),
-          ],
-        ),
+  Widget _buildTodayMetricCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+    bool fullWidth = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5,
+                    color: theme.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: fullWidth ? 15 : 14,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -391,12 +627,10 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   // ============================================================
   // STATISTICS
   // ============================================================
-
   Widget _buildStatisticsGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 700;
-
         final crossAxisCount = isWide ? 3 : 2;
 
         return GridView.count(
@@ -405,36 +639,50 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: isWide ? 1.8 : 1.45,
+          childAspectRatio: isWide ? 1.85 : 1.5,
           children: [
             _buildStatCard(
-              title: 'Produk',
+              title: 'Total Produk Aktif',
               value: totalProducts.toString(),
               icon: Icons.inventory_2_rounded,
             ),
-
             _buildStatCard(
-              title: 'Kategori',
+              title: 'Total Kategori',
               value: totalCategories.toString(),
               icon: Icons.category_rounded,
             ),
-
             _buildStatCard(
-              title: 'Pesanan',
+              title: 'Total Pesanan',
               value: totalOrders.toString(),
               icon: Icons.shopping_bag_rounded,
             ),
-
             _buildStatCard(
-              title: 'Menunggu',
+              title: 'Pesanan Diproses',
+              value: processingOrders.toString(),
+              icon: Icons.local_shipping_rounded,
+              color: const Color(0xFF2563EB),
+            ),
+            _buildStatCard(
+              title: 'Pesanan Menunggu',
               value: pendingOrders.toString(),
               icon: Icons.pending_actions_rounded,
+              color: const Color(0xFFD97706),
             ),
-
             _buildStatCard(
               title: 'Stok Menipis',
               value: lowStockProducts.toString(),
               icon: Icons.warning_amber_rounded,
+              color: lowStockProducts > 0
+                  ? const Color(0xFFB45309)
+                  : theme.brandGreen,
+            ),
+            _buildStatCard(
+              title: 'Stok Habis (0)',
+              value: outOfStockProducts.toString(),
+              icon: Icons.remove_shopping_cart_rounded,
+              color: outOfStockProducts > 0
+                  ? const Color(0xFFDC2626)
+                  : theme.brandGreen,
             ),
           ],
         );
@@ -446,54 +694,65 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
     required String title,
     required String value,
     required IconData icon,
+    Color? color,
   }) {
-    return Card(
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary
-                    .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: Theme.of(context).colorScheme.primary),
+    final effectiveColor = color ?? theme.darkGreen;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.paleGreen, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: theme.darkGreen.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: effectiveColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(11),
             ),
-
-            const SizedBox(width: 12),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  Text(
-                    value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+            child: Icon(icon, color: effectiveColor, size: 20),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  color: color ?? theme.textDark,
+                  letterSpacing: -0.4,
+                ),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: 2),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: theme.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -501,99 +760,98 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   // ============================================================
   // QUICK ACTIONS
   // ============================================================
-
   Widget _buildQuickActions() {
+    final actions = [
+      (
+        title: 'Kelola Produk',
+        subtitle: 'Tambah, ubah & atur katalog',
+        icon: Icons.inventory_2_rounded,
+        accent: theme.darkGreen,
+        onTap: _openProducts,
+      ),
+      (
+        title: 'Kelola Pesanan',
+        subtitle: 'Proses pesanan masuk siswa',
+        icon: Icons.shopping_bag_rounded,
+        accent: const Color(0xFF2563EB),
+        onTap: _openOrders,
+      ),
+      (
+        title: 'Inventaris',
+        subtitle: 'Audit stok & import Excel',
+        icon: Icons.bar_chart_rounded,
+        accent: theme.brandGreen,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AccountingDashboardPage(),
+            ),
+          );
+        },
+      ),
+      (
+        title: 'Verifikasi Barang',
+        subtitle: 'Tinjau produk konsinyasi siswa',
+        icon: Icons.fact_check_rounded,
+        accent: const Color(0xFFD97706),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ManagerVerificationPage(),
+            ),
+          );
+        },
+      ),
+      (
+        title: 'Kelola Iklan',
+        subtitle: 'Verifikasi banner & promo',
+        icon: Icons.campaign_rounded,
+        accent: const Color(0xFF7C3AED),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ManagerAdsPage()),
+          );
+        },
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Menu Manager',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        _buildSectionTitle(
+          title: 'Menu Manager',
+          subtitle: 'Akses cepat pengelolaan modul toko',
         ),
-
-        const SizedBox(height: 6),
-
-        // BARIS PERTAMA (Produk & Pesanan)
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                title: 'Kelola Produk',
-                subtitle: 'Tambah dan edit produk',
-                icon: Icons.inventory_2_rounded,
-                onTap: _openProducts,
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 700;
+            final crossAxisCount = isWide ? 3 : 2;
+            return GridView.builder(
+              itemCount: actions.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: isWide ? 1.55 : 1.18,
               ),
-            ),
-
-            const SizedBox(width: 6),
-
-            Expanded(
-              child: _buildActionCard(
-                title: 'Kelola Pesanan',
-                subtitle: 'Pantau pesanan siswa',
-                icon: Icons.shopping_bag_rounded,
-                onTap: _openOrders,
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 6),
-
-        // BARIS KEDUA (Inventaris & Verifikasi Konsinyasi)
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                title: 'Inventaris',
-                subtitle: 'Pantau inventaris student mart',
-                icon: Icons.bar_chart_rounded,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AccountingDashboardPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(width: 6),
-
-            // MENU BARU: VERIFIKASI KONSINYASI
-            Expanded(
-              child: _buildActionCard(
-                title: 'Verifikasi Barang',
-                subtitle: 'Tinjau konsinyasi siswa',
-                icon: Icons.fact_check_rounded,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ManagerVerificationPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(width: 6),
-
-            Expanded(
-              child: _buildActionCard(
-                title: 'Iklan',
-                subtitle: 'Kelola iklan promosi',
-                icon: Icons.campaign_rounded,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ManagerAdsPage()),
-                  );
-                },
-              ),
-            ),
-          ],
+              itemBuilder: (context, index) {
+                final item = actions[index];
+                return _buildActionCard(
+                  title: item.title,
+                  subtitle: item.subtitle,
+                  icon: item.icon,
+                  accent: item.accent,
+                  onTap: item.onTap,
+                );
+              },
+            );
+          },
         ),
       ],
     );
@@ -603,69 +861,79 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
     required String title,
     required String subtitle,
     required IconData icon,
+    required Color accent,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        child: Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: theme.paleGreen, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: theme.darkGreen.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(icon, color: Theme.of(context).colorScheme.primary),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: accent, size: 22),
+                  ),
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: theme.pageBackground,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: theme.darkGreen,
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 14),
-
+              const Spacer(),
               Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14.5,
+                  color: theme.textDark,
                 ),
               ),
-
-              const SizedBox(height: 4),
-
+              const SizedBox(height: 3),
               Text(
                 subtitle,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-
-              const SizedBox(height: 12),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    'Buka',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
+                style: GoogleFonts.plusJakartaSans(
+                  color: theme.textMuted,
+                  fontSize: 11.5,
+                  height: 1.3,
+                ),
               ),
             ],
           ),
@@ -677,30 +945,29 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   // ============================================================
   // RECENT ORDERS
   // ============================================================
-
   Widget _buildRecentOrders() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'Pesanan Terbaru',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-
-            if (recentOrders.isNotEmpty)
-              TextButton(
-                onPressed: _openOrders,
-                child: const Text('Lihat Semua'),
-              ),
-          ],
+        _buildSectionTitle(
+          title: 'Pesanan Terbaru',
+          subtitle: '5 transaksi terakhir yang masuk ke sistem',
+          trailing: recentOrders.isNotEmpty
+              ? TextButton.icon(
+                  onPressed: _openOrders,
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.darkGreen,
+                    textStyle: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                  label: const Text('Lihat Semua'),
+                )
+              : null,
         ),
-
         const SizedBox(height: 12),
-
         if (recentOrders.isEmpty)
           _buildEmptyOrders()
         else
@@ -710,34 +977,48 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   }
 
   Widget _buildEmptyOrders() {
-    return Card(
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-        child: Column(
-          children: [
-            Icon(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.paleGreen),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: theme.paleGreen,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
               Icons.receipt_long_outlined,
-              size: 52,
-              color: Colors.grey.shade400,
+              size: 28,
+              color: theme.darkGreen,
             ),
-
-            const SizedBox(height: 12),
-
-            const Text(
-              'Belum ada pesanan',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Belum ada pesanan',
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              fontSize: 15.5,
+              color: theme.textDark,
             ),
-
-            const SizedBox(height: 5),
-
-            const Text(
-              'Pesanan baru akan muncul di sini.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Pesanan baru dari siswa akan muncul di sini.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              color: theme.textMuted,
+              fontSize: 13,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -748,75 +1029,80 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
     }
 
     final user = order['user'];
-
     final orderNumber = order['order_number']?.toString() ?? 'Pesanan';
-
     final customerName = user is Map
         ? user['name']?.toString() ?? 'Pengguna'
         : 'Pengguna';
-
     final total = AppUtils.toInt(order['total']);
-
     final status = order['status']?.toString() ?? 'unknown';
-
     final color = _statusColor(status);
 
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: _openOrders,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _openOrders,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.paleGreen),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.receipt_long_rounded, color: color, size: 22),
                 ),
-                child: Icon(Icons.receipt_long_rounded, color: color),
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      orderNumber,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      customerName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      AppUtils.formatRupiah(total),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        orderNumber,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: theme.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        customerName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: theme.textMuted,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        AppUtils.formatRupiah(total),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13.5,
+                          color: theme.darkGreen,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-
-              const SizedBox(width: 8),
-
-              _buildStatusBadge(status),
-            ],
+                const SizedBox(width: 8),
+                _buildStatusBadge(status),
+              ],
+            ),
           ),
         ),
       ),
@@ -826,7 +1112,6 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   // ============================================================
   // STATUS BADGE
   // ============================================================
-
   Widget _buildStatusBadge(String status) {
     final color = _statusColor(status);
 
@@ -835,13 +1120,14 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         _formatStatus(status),
-        style: TextStyle(
+        style: GoogleFonts.plusJakartaSans(
           color: color,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -850,54 +1136,77 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
   // ============================================================
   // ERROR STATE
   // ============================================================
-
   Widget _buildErrorState() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: theme.paleGreen),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.cloud_off_rounded,
+                  color: Colors.red.shade700,
+                  size: 34,
+                ),
               ),
-              child: const Icon(
-                Icons.cloud_off_rounded,
-                color: Colors.red,
-                size: 36,
+              const SizedBox(height: 16),
+              Text(
+                'Gagal memuat dashboard',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: theme.textDark,
+                ),
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            const Text(
-              'Gagal memuat dashboard',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              _errorMessage ?? 'Terjadi kesalahan.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
-            ),
-
-            const SizedBox(height: 20),
-
-            FilledButton.icon(
-              onPressed: () {
-                _loadDashboard();
-              },
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Coba Lagi'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage ?? 'Terjadi kesalahan.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  color: theme.textMuted,
+                  fontSize: 13.5,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () => _loadDashboard(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.darkGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(
+                  'Coba Lagi',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

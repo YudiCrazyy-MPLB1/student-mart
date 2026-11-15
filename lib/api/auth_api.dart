@@ -67,6 +67,26 @@ class AuthApi {
   }
 
   // ============================================================
+  // RESEND EMAIL VERIFICATION
+  // ============================================================
+
+  static Future<String> resendVerificationEmail({
+    required String email,
+  }) async {
+    final json = await ApiClient.jsonRequest(
+      'POST',
+      '/email/resend',
+      body: {'email': email.trim()},
+      isPublic: true,
+      fallback: 'Gagal mengirim ulang email verifikasi.',
+      timeoutMessage: 'Server terlalu lama merespons. Coba lagi.',
+    );
+
+    return json['message']?.toString() ??
+        'Jika email terdaftar dan belum diverifikasi, link verifikasi baru telah dikirim.';
+  }
+
+  // ============================================================
   // LOGOUT
   // ============================================================
 

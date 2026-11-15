@@ -54,6 +54,27 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    const allowedDomains = [
+      'gmail.com',
+      'yahoo.com',
+      'yahoo.co.id',
+      'outlook.com',
+      'hotmail.com',
+      'icloud.com',
+      'smkn4jember.sch.id',
+      'student.smkn4jember.sch.id',
+    ];
+
+    final atIndex = email.lastIndexOf('@');
+    final domain = atIndex != -1 ? email.substring(atIndex + 1).toLowerCase() : '';
+    if (!allowedDomains.contains(domain)) {
+      _showMessage(
+        'Gunakan email yang valid (Gmail, Yahoo, Outlook, Hotmail, iCloud, atau email sekolah @smkn4jember.sch.id / @student.smkn4jember.sch.id).',
+        isError: true,
+      );
+      return;
+    }
+
     if (password.length < 8) {
       _showMessage('Password minimal 8 karakter.', isError: true);
       return;
@@ -133,6 +154,7 @@ class _RegisterPageState extends State<RegisterPage> {
     required bool isPassword,
     required TextInputAction action,
     String? hint,
+    String? helperText,
     TextInputType keyboardType = TextInputType.text,
     Iterable<String>? autofillHints,
     VoidCallback? onSubmitted,
@@ -167,6 +189,12 @@ class _RegisterPageState extends State<RegisterPage> {
             hintStyle: GoogleFonts.plusJakartaSans(
               color: const Color(0xFF94A3B8),
               fontSize: 13.5,
+            ),
+            helperText: helperText,
+            helperMaxLines: 2,
+            helperStyle: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              color: const Color(0xFF64748B),
             ),
             suffixIcon: isPassword
                 ? IconButton(
@@ -351,11 +379,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
           _inputField(
             label: 'Email',
+            hint: 'nama@example.com / nama@smkn4jember.sch.id',
             controller: emailController,
             isPassword: false,
             keyboardType: TextInputType.emailAddress,
             action: TextInputAction.next,
             autofillHints: const [AutofillHints.email],
+            helperText:
+                'Domain didukung: Gmail, Yahoo, Outlook, Hotmail, iCloud, atau email sekolah @smkn4jember.sch.id / @student.smkn4jember.sch.id',
           ),
           const SizedBox(height: 14),
 
