@@ -61,6 +61,64 @@ class AdvertisementApi {
     );
   }
 
+  static Future<({List<dynamic> ads, Map<String, dynamic> counts})>
+      getManagedAds({
+    required String view,
+    String? query,
+    int? endingWithin,
+    String? packageType,
+    String? sort,
+  }) async {
+    final q = <String, String>{'view': view};
+    if (query != null && query.trim().isNotEmpty) q['q'] = query.trim();
+    if (endingWithin != null) q['ending_within'] = '$endingWithin';
+    if (packageType != null) q['package_type'] = packageType;
+    if (sort != null) q['sort'] = sort;
+
+    final json = await ApiClient.jsonRequest(
+      'GET',
+      '/manager/advertisements',
+      requireAuth: true,
+      query: q,
+      fallback: 'Gagal memuat daftar iklan.',
+    );
+
+    final counts = json['counts'];
+    return (
+      ads: ApiClient.dataList(json),
+      counts: counts is Map ? Map<String, dynamic>.from(counts) : <String, dynamic>{},
+    );
+  }
+
+  static Future<void> takeDownAd({required int adId, required String reason}) {
+    return ApiClient.jsonRequest(
+      'PATCH',
+      '/manager/advertisements/$adId/take-down',
+      requireAuth: true,
+      body: {'reason': reason},
+      fallback: 'Gagal menurunkan iklan.',
+    );
+  }
+
+  static Future<void> extendAd({required int adId, required int days}) {
+    return ApiClient.jsonRequest(
+      'PATCH',
+      '/manager/advertisements/$adId/extend',
+      requireAuth: true,
+      body: {'days': days},
+      fallback: 'Gagal memperpanjang iklan.',
+    );
+  }
+
+  static Future<void> deleteAd(int adId) {
+    return ApiClient.jsonRequest(
+      'DELETE',
+      '/manager/advertisements/$adId',
+      requireAuth: true,
+      fallback: 'Gagal menghapus iklan.',
+    );
+  }
+
   /// Route publik. Kalau gagal dikembalikan list kosong supaya tampilan
   /// Home tidak rusak hanya karena iklan tidak termuat.
   static Future<List<dynamic>> getActiveAds() async {

@@ -391,4 +391,28 @@ class ApiService {
 
   static Future<List<dynamic>> getActiveAds() =>
       AdvertisementApi.getActiveAds();
+
+  static Future<({List<dynamic> ads, Map<String, dynamic> counts})>
+      getManagedAds({
+    required String view,
+    String? query,
+    int? endingWithin,
+    String? packageType,
+    String? sort,
+  }) =>
+          AdvertisementApi.getManagedAds(
+            view: view,
+            query: query,
+            endingWithin: endingWithin,
+            packageType: packageType,
+            sort: sort,
+          );
+
+  static Future<void> takeDownAd({required int adId, required String reason}) =>
+      AdvertisementApi.takeDownAd(adId: adId, reason: reason);
+
+  static Future<void> extendAd({required int adId, required int days}) =>
+      AdvertisementApi.extendAd(adId: adId, days: days);
+
+  static Future<void> deleteAd(int adId) => AdvertisementApi.deleteAd(adId);
 }
