@@ -16,7 +16,7 @@ class ManagerOrderPage extends StatefulWidget {
 }
 
 class _ManagerOrderPageState extends State<ManagerOrderPage> {
-  List> orders = [];
+  List<Map<String, dynamic>> orders = [];
   bool isLoading = true;
   String searchQuery = '';
   String selectedStatus = 'all';
@@ -117,7 +117,7 @@ class _ManagerOrderPageState extends State<ManagerOrderPage> {
     }
   }
 
-  List> get filteredOrders {
+  List<Map<String, dynamic>> get filteredOrders {
     return orders.where((order) {
       final status = order['status']?.toString().toLowerCase() ?? '';
       final orderNumber = order['order_number']?.toString().toLowerCase() ?? '';
