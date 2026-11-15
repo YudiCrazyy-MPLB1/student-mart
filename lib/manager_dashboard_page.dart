@@ -6,6 +6,7 @@ import 'accounting_dashboard_page.dart';
 import 'api_service.dart';
 import 'auth_provider.dart';
 import 'manager_ads_page.dart';
+import 'manager_ads_management.dart';
 import 'manager_order_page.dart';
 import 'manager_product_page.dart';
 import 'manager_verification_page.dart';
@@ -812,7 +813,7 @@ class _ManagerDashboardPageState extends State<ManagerDashboardPage> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const ManagerAdsPage()),
+            MaterialPageRoute(builder: (_) => const ManagerAdsManagementPage()),
           );
         },
       ),
