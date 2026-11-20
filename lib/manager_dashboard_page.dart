@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'accounting_dashboard_page.dart';
 import 'api_service.dart';
 import 'auth_provider.dart';
-import 'manager_ads_page.dart';
 import 'manager_ads_management.dart';
 import 'manager_order_page.dart';
 import 'manager_product_page.dart';
